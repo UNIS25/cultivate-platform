@@ -1,0 +1,42 @@
+{
+  "name": "cultivate-next",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:stop": "supabase stop",
+    "db:lint": "supabase db lint --local --level warning",
+    "db:types": "supabase gen types typescript --local --schema public > src/types/database.ts",
+    "db:verify": "node --env-file=.env.local scripts/verify-supabase.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@supabase/ssr": "0.12.3",
+    "leaflet": "1.9.4",
+    "lucide-react": "1.25.0",
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "recharts": "3.9.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/leaflet": "1.9.21",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "supabase": "2.109.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  }
+}
