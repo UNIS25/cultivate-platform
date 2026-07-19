@@ -8,6 +8,15 @@ export type FoodCategory =
 
 export type InitiativeStatus = "Active" | "Pilot" | "Seasonal";
 export type SurplusStatus = "Available" | "Reserved" | "Collected";
+export type ResourceEventStatus =
+  | "draft"
+  | "available"
+  | "matched"
+  | "accepted"
+  | "collected"
+  | "delivered"
+  | "cancelled"
+  | "expired";
 export type Weekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 export interface Initiative {
@@ -81,6 +90,68 @@ export interface SurplusListing {
   latitude: number;
   longitude: number;
   notes: string;
+}
+
+export type ResourceTimelineEventType =
+  | "offer_created"
+  | "match_proposed"
+  | "recipient_accepted"
+  | "collection_confirmed"
+  | "delivery_confirmed"
+  | "impact_recorded"
+  | "status_changed";
+
+export interface AuditEvent {
+  id: string;
+  resourceEventId: string;
+  eventType: ResourceTimelineEventType;
+  actorLabel: string;
+  occurredAt: string;
+  previousStatus?: ResourceEventStatus;
+  newStatus?: ResourceEventStatus;
+  note?: string;
+}
+
+export interface ResourceEvent {
+  id: string;
+  organisationId: string;
+  sourceType: "surplus_listing" | "manual" | "adapter";
+  sourceId: string;
+  materialCategory: FoodCategory;
+  quantityKg: number;
+  status: ResourceEventStatus;
+  sourceLocation: string;
+  destinationId?: string;
+  currentMatchId?: string;
+  collectionId?: string;
+  deliveryConfirmationId?: string;
+  impactRecordId?: string;
+  matchedAt?: string;
+  acceptedAt?: string;
+  collectedAt?: string;
+  deliveredAt?: string;
+  impactRecordedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  title: string;
+  city: string;
+  country: string;
+  donorName: string;
+  donorType: string;
+  recipientName?: string;
+  recipientType?: string;
+  collectionDeadline?: string;
+  auditTrail: AuditEvent[];
+}
+
+export interface OrganisationHealthIndicators {
+  organisationId: string;
+  pickupCompletionRate: number;
+  averageResponseHours: number;
+  successfulDeliveryRate: number;
+  cancelledMatchRate: number;
+  dataCompleteness: number;
+  verificationStatus: "Verified" | "Pending";
 }
 
 export interface MatchRecommendation {

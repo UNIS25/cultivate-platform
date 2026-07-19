@@ -12,6 +12,7 @@ import {
   Handshake,
   LayoutDashboard,
   Map,
+  Eye,
   Menu,
   Search,
   ShieldCheck,
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/matches", label: "Matching", shortLabel: "Matches", icon: Handshake, index: "04" },
   { href: "/recommendations", label: "Governance", shortLabel: "Guidance", icon: ShieldCheck, index: "05" },
   { href: "/impact", label: "Impact", icon: BarChart3, index: "06" },
+  { href: "/transparency", label: "Transparency", shortLabel: "Public", icon: Eye, index: "07" },
 ];
 
 function isCurrentPath(pathname: string, href: string) {
@@ -67,7 +69,7 @@ function Navigation({ pathname, onNavigate, mobile = false }: { pathname: string
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, dateLabel }: { children: ReactNode; dateLabel: string }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -102,10 +104,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-[var(--background)]">
       <header className="sticky top-0 z-[800] border-b border-[var(--line)] bg-white/95 backdrop-blur-xl">
         <div className="hidden h-7 items-center bg-[var(--ink)] px-5 text-[9px] font-bold text-white/60 sm:flex lg:px-7">
-          <span className="flex items-center gap-2 text-white"><span className="cn-live-dot" /> LIVE DEMONSTRATION NETWORK</span>
+          <span className="flex items-center gap-2 text-white"><span className="cn-live-dot" /> INDEPENDENT EXPLORATORY PROTOTYPE</span>
           <span className="mx-4 h-3 w-px bg-white/15" />
           <span>FICTIONAL DATA ONLY</span>
-          <span className="ml-auto hidden items-center gap-5 md:flex"><span>SUPABASE / {supabaseConnected ? "CONNECTED" : "SETUP REQUIRED"}</span><span>OPENSTREETMAP / ACTIVE</span><span>18 JUL 2026</span></span>
+          <span className="ml-auto hidden items-center gap-5 md:flex"><span>SUPABASE / {supabaseConnected ? "CONNECTED" : "SETUP REQUIRED"}</span><span>OPENSTREETMAP / ACTIVE</span><span>{dateLabel.toUpperCase()}</span></span>
         </div>
         <div className="mx-auto flex h-16 max-w-[1760px] items-stretch px-4 sm:px-6 lg:px-7">
           <button className="mr-2 grid w-10 place-items-center text-[var(--muted)] hover:text-[var(--ink)] lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation" title="Open navigation">
@@ -177,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <nav aria-label="Mobile navigation" className="fixed inset-x-0 bottom-0 z-[900] grid grid-cols-6 border-t border-[var(--line)] bg-white/96 px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_28px_rgb(17_24_20_/_10%)] backdrop-blur-xl lg:hidden">
+      <nav aria-label="Mobile navigation" className="fixed inset-x-0 bottom-0 z-[900] grid grid-cols-7 border-t border-[var(--line)] bg-white/96 px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_28px_rgb(17_24_20_/_10%)] backdrop-blur-xl lg:hidden">
         {navItems.map(({ href, label, shortLabel, icon: Icon }) => {
           const active = isCurrentPath(pathname, href);
           return <Link key={href} href={href} aria-current={active ? "page" : undefined} className={cn("relative flex min-w-0 flex-col items-center gap-1 py-1.5 text-[9px] font-bold", active ? "text-[var(--ink)]" : "text-[var(--muted)]")}><Icon aria-hidden="true" size={18} strokeWidth={active ? 2.5 : 1.8} /><span className="max-w-full truncate">{shortLabel ?? label}</span>{active && <span className="absolute -top-1.5 h-[3px] w-7 bg-[var(--acid)] shadow-[0_0_0_1px_var(--green)]" />}</Link>;

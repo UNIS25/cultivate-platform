@@ -22,8 +22,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MATCHING_METHOD_VERSION, MATCHING_WEIGHTS } from "@/features/matching/engine";
+import { ResourceEventWorkflow } from "@/features/workflow/resource-event-workflow";
 import { cn, formatDateTime } from "@/lib/format";
-import type { ListingMatchGroup, MatchFactorKey, RecipientRanking } from "@/types/domain";
+import type { ListingMatchGroup, MatchFactorKey, RecipientRanking, ResourceEvent } from "@/types/domain";
 
 const factorIcons = {
   distance: Route,
@@ -34,7 +35,7 @@ const factorIcons = {
   deadline: Timer,
 } satisfies Record<MatchFactorKey, typeof Route>;
 
-export function MatchesWorkspace({ groups, dataReady }: { groups: ListingMatchGroup[]; dataReady: boolean }) {
+export function MatchesWorkspace({ groups, events, dataReady }: { groups: ListingMatchGroup[]; events: ResourceEvent[]; dataReady: boolean }) {
   const [query, setQuery] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>(groups[0]?.id);
   const [selectedRankingId, setSelectedRankingId] = useState<string | undefined>(groups[0]?.rankings[0]?.id);
@@ -48,6 +49,7 @@ export function MatchesWorkspace({ groups, dataReady }: { groups: ListingMatchGr
   );
   const selectedGroup = groups.find((group) => group.id === selectedGroupId) ?? visibleGroups[0];
   const selectedRanking = selectedGroup?.rankings.find((ranking) => ranking.id === selectedRankingId) ?? selectedGroup?.rankings[0];
+  const selectedEvent = events.find((event) => event.sourceId === selectedGroup?.surplus.id);
   const eligibleCount = groups.reduce((total, group) => total + group.rankings.filter((ranking) => ranking.eligible).length, 0);
 
   function selectGroup(group: ListingMatchGroup) {
@@ -109,6 +111,8 @@ export function MatchesWorkspace({ groups, dataReady }: { groups: ListingMatchGr
               <div><div className="flex flex-wrap items-center gap-2"><Badge tone={selectedGroup.surplus.status === "Available" ? "amber" : "blue"}>{selectedGroup.surplus.status} offer</Badge><span className="text-[11px] font-bold text-[var(--muted)]">Collect by {formatDateTime(selectedGroup.surplus.collectBy)}</span></div><h2 className="mt-3 text-xl font-bold">{selectedGroup.surplus.title}</h2><p className="mt-1 text-sm text-[var(--muted)]">{selectedGroup.surplus.quantityKg} kg · {selectedGroup.surplus.category} · {selectedGroup.surplus.handling} · from {selectedGroup.donor.name}</p></div>
               <div className="shrink-0"><Badge tone="green">{selectedGroup.rankings.filter((ranking) => ranking.eligible).length} of {selectedGroup.rankings.length} eligible</Badge></div>
             </div>
+
+            {selectedEvent && <div className="mt-5"><ResourceEventWorkflow event={selectedEvent} compact /></div>}
 
             <div className="mt-5 border-l-4 border-[var(--blue)] bg-[var(--blue-soft)] p-4">
               <div className="flex items-start gap-3"><Info className="mt-0.5 shrink-0 text-[var(--blue)]" size={17} /><div><p className="text-xs font-bold text-[var(--blue)]">Transparent rules, not an AI model</p><p className="mt-1 text-xs leading-5 text-[var(--blue)]/80">Every recipient is scored with the same six published factors. Blocking requirements remain visible and place a recipient below eligible matches.</p></div></div>

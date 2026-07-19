@@ -35,6 +35,10 @@ export function getInitiative(data: NetworkSnapshot, slug: string) {
   return data.initiatives.find((initiative) => initiative.slug === slug);
 }
 
+export function getResourceEvent(data: NetworkSnapshot, sourceId: string) {
+  return data.resourceEvents.find((event) => event.sourceId === sourceId || event.id === sourceId);
+}
+
 export function getDemoMetrics(data: NetworkSnapshot) {
   return {
     availableKg: data.surplusListings

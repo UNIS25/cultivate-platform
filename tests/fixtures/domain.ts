@@ -1,4 +1,9 @@
-import type { Donor, Recipient, SurplusListing } from "@/types/domain";
+import type { Donor, Recipient, ResourceEvent, SurplusListing } from "@/types/domain";
+import { getDemoListingSchedule } from "@/lib/demo-dates";
+
+const produceSchedule = getDemoListingSchedule("fixture-listing-001", "Available");
+const chilledSchedule = getDemoListingSchedule("fixture-listing-002", "Available");
+const completedSchedules = [4, 5, 6].map((id) => getDemoListingSchedule(`fixture-listing-00${id}`, "Collected"));
 
 export const localDonor: Donor = {
   id: "donor-fixture-local",
@@ -72,8 +77,8 @@ export const produceListing: SurplusListing = {
   category: "Produce",
   quantityKg: 86,
   portions: 172,
-  availableFrom: "2026-07-18T15:00:00Z",
-  collectBy: "2026-07-18T19:00:00Z",
+  availableFrom: produceSchedule.availableFrom,
+  collectBy: produceSchedule.collectBy,
   status: "Available",
   handling: "Ambient",
   city: "Dublin",
@@ -90,8 +95,8 @@ export const chilledMealListing: SurplusListing = {
   category: "Prepared meals",
   quantityKg: 64,
   portions: 118,
-  availableFrom: "2026-07-18T14:00:00Z",
-  collectBy: "2026-07-18T18:00:00Z",
+  availableFrom: chilledSchedule.availableFrom,
+  collectBy: chilledSchedule.collectBy,
   handling: "Chilled",
   city: "Brussels",
   latitude: 50.855,
@@ -107,7 +112,9 @@ export const completedListings: SurplusListing[] = [
     category: "Bakery",
     quantityKg: 18,
     status: "Collected",
-    collectedAt: "2026-07-18T18:42:00Z",
+    availableFrom: completedSchedules[0].availableFrom,
+    collectBy: completedSchedules[0].collectBy,
+    collectedAt: completedSchedules[0].collectedAt,
   },
   {
     ...produceListing,
@@ -117,7 +124,9 @@ export const completedListings: SurplusListing[] = [
     category: "Bakery",
     quantityKg: 21,
     status: "Collected",
-    collectedAt: "2026-07-18T20:18:00Z",
+    availableFrom: completedSchedules[1].availableFrom,
+    collectBy: completedSchedules[1].collectBy,
+    collectedAt: completedSchedules[1].collectedAt,
   },
   {
     ...produceListing,
@@ -127,7 +136,9 @@ export const completedListings: SurplusListing[] = [
     category: "Produce",
     quantityKg: 16,
     status: "Collected",
-    collectedAt: "2026-07-18T17:24:00Z",
+    availableFrom: completedSchedules[2].availableFrom,
+    collectBy: completedSchedules[2].collectBy,
+    collectedAt: completedSchedules[2].collectedAt,
   },
 ];
 
@@ -137,3 +148,33 @@ export const impactRecipients: Recipient[] = completedListings.map((listing, ind
   name: `Impact recipient ${index + 1}`,
   city: ["Cork", "Malmo", "Valencia"][index],
 }));
+
+export const deliveredResourceEvents: ResourceEvent[] = completedListings.map((listing, index) => {
+  const recipient = impactRecipients[index];
+  const deliveredAt = new Date(new Date(listing.collectedAt!).getTime() + 60 * 60 * 1000).toISOString();
+  return {
+    id: `resource-event-${index + 1}`,
+    organisationId: localDonor.id,
+    sourceType: "surplus_listing",
+    sourceId: listing.id,
+    materialCategory: listing.category,
+    quantityKg: listing.quantityKg,
+    status: "delivered",
+    sourceLocation: `${listing.city}, generalised area`,
+    destinationId: recipient.id,
+    collectedAt: listing.collectedAt,
+    deliveredAt,
+    impactRecordedAt: new Date(new Date(deliveredAt).getTime() + 15 * 60 * 1000).toISOString(),
+    createdAt: listing.availableFrom,
+    updatedAt: deliveredAt,
+    title: listing.title,
+    city: listing.city,
+    country: localDonor.country,
+    donorName: localDonor.name,
+    donorType: localDonor.type,
+    recipientName: recipient.name,
+    recipientType: recipient.type,
+    collectionDeadline: listing.collectBy,
+    auditTrail: [],
+  };
+});

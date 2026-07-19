@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { AppShell } from "@/components/shell/app-shell";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: {
@@ -15,7 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body>
-        <AppShell>{children}</AppShell>
+        <AppShell dateLabel={formatDate(new Date())}>{children}</AppShell>
       </body>
     </html>
   );

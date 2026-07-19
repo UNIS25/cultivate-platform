@@ -21,27 +21,25 @@ interface FormState {
   notes: string;
 }
 
-const initialState: FormState = {
+const initialState: Omit<FormState, "availableFrom" | "collectBy"> = {
   donorId: "",
   title: "",
   category: "Produce",
   quantityKg: "",
   handling: "Ambient",
-  availableFrom: "2026-07-18T15:00",
-  collectBy: "2026-07-18T19:00",
   city: "",
   notes: "",
 };
 
 const fieldClass = "mt-2 h-12 w-full rounded-[2px] border border-[var(--line-strong)] bg-[var(--surface-raised)] px-3 text-sm outline-none transition-[background-color,border-color,box-shadow] placeholder:text-[#7f8b84] focus:border-[var(--blue)] focus:bg-white focus:shadow-[3px_3px_0_var(--blue-soft)]";
 
-function createInitialState(donors: Donor[]): FormState {
-  return { ...initialState, donorId: donors[0]?.id ?? "", city: donors[0]?.city ?? "" };
+function createInitialState(donors: Donor[], initialWindow: { availableFrom: string; collectBy: string }): FormState {
+  return { ...initialState, ...initialWindow, donorId: donors[0]?.id ?? "", city: donors[0]?.city ?? "" };
 }
 
-export function ReportForm({ donors, dataReady }: { donors: Donor[]; dataReady: boolean }) {
+export function ReportForm({ donors, dataReady, initialWindow }: { donors: Donor[]; dataReady: boolean; initialWindow: { availableFrom: string; collectBy: string } }) {
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormState>(() => createInitialState(donors));
+  const [form, setForm] = useState<FormState>(() => createInitialState(donors, initialWindow));
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -116,7 +114,7 @@ export function ReportForm({ donors, dataReady }: { donors: Donor[]; dataReady: 
           <div className="bg-[var(--background)] p-4"><p className="text-lg font-bold">{estimate.meals}</p><p className="mt-1 text-xs text-[var(--muted)]">Est. meals</p></div>
           <div className="bg-[var(--background)] p-4"><p className="text-lg font-bold">{estimate.co2e.toFixed(0)} kg</p><p className="mt-1 text-xs text-[var(--muted)]">Est. CO₂e avoided</p></div>
         </div>
-        <div className="mt-7 flex flex-col justify-center gap-2 sm:flex-row"><Link href="/matches" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[3px] border border-[var(--ink)] bg-[var(--ink)] px-4 text-sm font-bold text-white shadow-[3px_3px_0_var(--acid)] hover:bg-[var(--green)]">View matches <ArrowRight size={16} /></Link><button onClick={() => { setSubmitted(false); setStep(1); setForm(createInitialState(donors)); }} className="inline-flex min-h-10 items-center justify-center rounded-[3px] border border-[var(--line-strong)] bg-white px-4 text-sm font-bold hover:bg-[var(--background)]">Report another offer</button></div>
+        <div className="mt-7 flex flex-col justify-center gap-2 sm:flex-row"><Link href="/matches" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[3px] border border-[var(--ink)] bg-[var(--ink)] px-4 text-sm font-bold text-white shadow-[3px_3px_0_var(--acid)] hover:bg-[var(--green)]">View matches <ArrowRight size={16} /></Link><button onClick={() => { setSubmitted(false); setStep(1); setForm(createInitialState(donors, initialWindow)); }} className="inline-flex min-h-10 items-center justify-center rounded-[3px] border border-[var(--line-strong)] bg-white px-4 text-sm font-bold hover:bg-[var(--background)]">Report another offer</button></div>
       </section>
     );
   }

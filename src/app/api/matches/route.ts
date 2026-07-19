@@ -4,7 +4,7 @@ import { getNetworkSnapshot } from "@/data";
 import { MATCHING_METHOD_VERSION, scoreRecipient } from "@/features/matching/engine";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Json } from "@/types/database";
+import { persistAcceptedMatch } from "@/server/services/matches";
 
 interface MatchRequest {
   listingId?: unknown;
@@ -57,32 +57,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "This recipient no longer satisfies all blocking requirements." }, { status: 409 });
   }
 
-  const { data: existing, error: existingError } = await supabase
-    .from("matches")
-    .select("id")
-    .eq("listing_id", listing.id)
-    .eq("recipient_organisation_id", recipient.id)
-    .maybeSingle();
-  if (existingError) {
-    console.error(`[supabase] Could not read existing match: ${existingError.message}`);
-    return NextResponse.json({ error: "Supabase could not verify the match record." }, { status: 500 });
-  }
-
-  const result = existing
-    ? await supabase.from("matches").update({ status: "accepted", responded_at: new Date().toISOString() }).eq("id", existing.id).select("id").single()
-    : await supabase.from("matches").insert({
-        listing_id: listing.id,
-        recipient_organisation_id: recipient.id,
-        status: "accepted",
-        score: ranking.score,
-        eligible: true,
-        distance_km: Number(ranking.distanceKm.toFixed(2)),
-        scoring_method: MATCHING_METHOD_VERSION,
-        score_breakdown: ranking.factors as unknown as Json,
-        blockers: ranking.blockers as unknown as Json,
-        responded_at: new Date().toISOString(),
-        created_by: authData.user.id,
-      }).select("id").single();
+  const result = await persistAcceptedMatch({ supabase, ranking, userId: authData.user.id, methodVersion: MATCHING_METHOD_VERSION });
 
   if (result.error) {
     console.error(`[supabase] Could not accept match: ${result.error.message}`);

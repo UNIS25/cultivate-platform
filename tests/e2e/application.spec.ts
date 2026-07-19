@@ -13,6 +13,8 @@ const routes = [
   ["/matches", "Matching recommendations"],
   ["/recommendations", "Strengthen how the network works"],
   ["/impact", "Impact dashboard"],
+  ["/transparency", "Food-sharing activity at a glance"],
+  ["/data-governance", "Data governance and access levels"],
 ] as const;
 
 test.describe("primary routes", () => {
@@ -94,19 +96,21 @@ test("impact dashboard exposes direct metrics and demonstration assumptions", as
   const summary = page.getByRole("region", { name: "Impact summary" });
   for (const label of [
     "Food redistributed",
-    "Estimated meals provided",
+    "Estimated meals",
     "Estimated financial value",
+    "Estimated CO2e avoided",
+    "Landfill diversion",
     "Collections completed",
     "Recipient organisations supported",
-    "Estimated waste avoided",
+    "Collection success rate",
   ]) {
     await expect(summary.getByRole("heading", { name: label, exact: true })).toBeVisible();
   }
 
-  await expect(page.getByRole("heading", { name: "Demonstration assumptions", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Demonstration methodology", exact: true })).toBeVisible();
   await expect(page.getByText("2.4 meals per kg", { exact: true })).toBeVisible();
   await expect(page.getByText("€5.75 per kg", { exact: true })).toBeVisible();
-  await expect(page.getByText("92% of redistributed kg", { exact: true })).toBeVisible();
+  await expect(page.getByText("92% of delivered kg", { exact: true })).toBeVisible();
   await expect(page.getByText("src/config/impact-assumptions.ts", { exact: true })).toBeVisible();
 
   const download = page.waitForEvent("download");
@@ -118,6 +122,41 @@ test("impact dashboard exposes direct metrics and demonstration assumptions", as
   } else {
     await page.screenshot({ path: "/tmp/cultivate-impact-mobile.png", fullPage: true });
   }
+});
+
+test("completed deliveries expose workflow timeline and chain of custody", async ({ page }) => {
+  test.skip(!hasSupabaseData, "Requires a migrated and seeded Supabase project.");
+  await page.goto("/impact");
+  const links = page.locator('section[aria-labelledby="deliveries-title"] a[href^="/listings/"]');
+  expect(await links.count()).toBeGreaterThan(0);
+  await links.first().click();
+  await expect(page.getByRole("heading", { name: "Resource-event workflow" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chain of custody" })).toBeVisible();
+  for (const stage of ["Offer created", "Match proposed", "Recipient accepted", "Collected", "Delivered", "Impact recorded"]) {
+    await expect(page.getByText(stage, { exact: true })).toBeVisible();
+  }
+});
+
+test("demonstration role switcher exposes all five dashboard views", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Demonstration role switcher" })).toBeVisible();
+  for (const [role, expected] of [
+    ["Food donor", "Active donor offers"],
+    ["Recipient organisation", "Nearby food and delivery history"],
+    ["Municipality", "Surplus hotspots"],
+    ["Researcher", "Dataset methodology"],
+    ["Platform administrator", "Pending organisation verification"],
+  ] as const) {
+    await page.getByRole("button", { name: role, exact: true }).click();
+    await expect(page.getByRole("heading", { name: expected, exact: true })).toBeVisible();
+  }
+});
+
+test("public transparency remains aggregate and anonymised", async ({ page }) => {
+  await page.goto("/transparency");
+  await expect(page.getByRole("region", { name: "Public transparency summary" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recent completed events" })).toBeVisible();
+  await expect(page.getByText("No contact details", { exact: false })).toBeVisible();
 });
 
 test("shell notifications expose linked demo alerts", async ({ page }) => {

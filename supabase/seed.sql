@@ -113,26 +113,26 @@ from jsonb_to_recordset($recipients$[
 create temporary table seed_surplus on commit preserve rows as
 select *
 from jsonb_to_recordset($surplus$[
-  {"id":"surplus-001","donorId":"donor-01","title":"Seasonal vegetables","category":"Produce","quantityKg":86,"portions":172,"availableFrom":"2026-07-18T15:00:00Z","collectBy":"2026-07-18T19:00:00Z","status":"Available","handling":"Ambient","city":"Dublin","latitude":53.346,"longitude":-6.267,"notes":"Mixed courgettes, peppers and carrots in stackable crates."},
-  {"id":"surplus-002","donorId":"donor-01","title":"Deli sandwiches","category":"Prepared meals","quantityKg":34,"portions":92,"availableFrom":"2026-07-18T17:30:00Z","collectBy":"2026-07-18T20:00:00Z","status":"Reserved","handling":"Chilled","city":"Dublin","latitude":53.346,"longitude":-6.267,"notes":"Individually labelled; mixed vegetarian and chicken fillings."},
-  {"id":"surplus-003","donorId":"donor-02","title":"Sourdough and rolls","category":"Bakery","quantityKg":42,"portions":126,"availableFrom":"2026-07-18T17:00:00Z","collectBy":"2026-07-19T09:00:00Z","status":"Available","handling":"Ambient","city":"Cork","latitude":51.901,"longitude":-8.468,"notes":"Packed in food-safe paper sacks."},
-  {"id":"surplus-004","donorId":"donor-02","recipientId":"recipient-02","title":"Breakfast pastries","category":"Bakery","quantityKg":18,"portions":72,"availableFrom":"2026-07-18T16:30:00Z","collectBy":"2026-07-18T19:30:00Z","collectedAt":"2026-07-18T18:42:00Z","status":"Collected","handling":"Ambient","city":"Cork","latitude":51.901,"longitude":-8.468,"notes":"Contains gluten, dairy and nuts."},
-  {"id":"surplus-005","donorId":"donor-03","title":"Conference lunch trays","category":"Prepared meals","quantityKg":64,"portions":118,"availableFrom":"2026-07-18T14:00:00Z","collectBy":"2026-07-18T18:00:00Z","status":"Available","handling":"Chilled","city":"Brussels","latitude":50.855,"longitude":4.36,"notes":"Vegetarian grain bowls kept below 5°C."},
-  {"id":"surplus-006","donorId":"donor-03","title":"Unopened yoghurt pots","category":"Dairy","quantityKg":27,"portions":108,"availableFrom":"2026-07-19T08:00:00Z","collectBy":"2026-07-19T12:00:00Z","status":"Reserved","handling":"Chilled","city":"Brussels","latitude":50.855,"longitude":4.36,"notes":"Use-by date 21 July; sealed multipacks."},
-  {"id":"surplus-007","donorId":"donor-04","title":"Mixed salad vegetables","category":"Produce","quantityKg":112,"portions":224,"availableFrom":"2026-07-18T13:00:00Z","collectBy":"2026-07-18T17:30:00Z","status":"Available","handling":"Chilled","city":"Rotterdam","latitude":51.918,"longitude":4.49,"notes":"Lettuce, cucumber and tomatoes; cosmetic imperfections only."},
-  {"id":"surplus-008","donorId":"donor-04","title":"Ripe stone fruit","category":"Produce","quantityKg":73,"portions":146,"availableFrom":"2026-07-19T06:30:00Z","collectBy":"2026-07-19T10:00:00Z","status":"Available","handling":"Ambient","city":"Rotterdam","latitude":51.918,"longitude":4.49,"notes":"Ready to eat or cook within 24 hours."},
-  {"id":"surplus-009","donorId":"donor-05","title":"Rice and canned beans","category":"Pantry","quantityKg":95,"portions":285,"availableFrom":"2026-07-18T10:00:00Z","collectBy":"2026-07-20T16:00:00Z","status":"Available","handling":"Ambient","city":"Porto","latitude":41.15,"longitude":-8.62,"notes":"Outer cartons damaged; primary packaging intact."},
-  {"id":"surplus-010","donorId":"donor-05","title":"Assorted grocery crates","category":"Mixed","quantityKg":58,"portions":140,"availableFrom":"2026-07-19T09:00:00Z","collectBy":"2026-07-19T15:00:00Z","status":"Reserved","handling":"Ambient","city":"Porto","latitude":41.15,"longitude":-8.62,"notes":"Shelf-stable foods with full ingredient labels."},
-  {"id":"surplus-011","donorId":"donor-06","title":"Rye loaves","category":"Bakery","quantityKg":67,"portions":201,"availableFrom":"2026-07-18T18:00:00Z","collectBy":"2026-07-19T08:30:00Z","status":"Available","handling":"Ambient","city":"Malmö","latitude":55.61,"longitude":13.01,"notes":"Unsliced loaves in reusable bakery crates."},
-  {"id":"surplus-012","donorId":"donor-06","recipientId":"recipient-06","title":"Cardamom buns","category":"Bakery","quantityKg":21,"portions":84,"availableFrom":"2026-07-18T18:00:00Z","collectBy":"2026-07-18T21:00:00Z","collectedAt":"2026-07-18T20:18:00Z","status":"Collected","handling":"Ambient","city":"Malmö","latitude":55.61,"longitude":13.01,"notes":"Contains gluten and dairy."},
-  {"id":"surplus-013","donorId":"donor-07","title":"New-season potatoes","category":"Produce","quantityKg":140,"portions":280,"availableFrom":"2026-07-19T07:00:00Z","collectBy":"2026-07-20T12:00:00Z","status":"Available","handling":"Ambient","city":"Tallinn","latitude":59.43,"longitude":24.74,"notes":"Washed and packed in 10 kg sacks."},
-  {"id":"surplus-014","donorId":"donor-07","title":"Carrots and beetroot","category":"Produce","quantityKg":88,"portions":176,"availableFrom":"2026-07-19T07:00:00Z","collectBy":"2026-07-20T12:00:00Z","status":"Reserved","handling":"Ambient","city":"Tallinn","latitude":59.43,"longitude":24.74,"notes":"Mixed grade, suitable for cooking."},
-  {"id":"surplus-015","donorId":"donor-08","title":"Pasta meal portions","category":"Prepared meals","quantityKg":78,"portions":156,"availableFrom":"2026-07-18T15:30:00Z","collectBy":"2026-07-18T19:00:00Z","status":"Available","handling":"Chilled","city":"Bologna","latitude":44.5,"longitude":11.35,"notes":"Tomato and vegetable pasta in sealed catering trays."},
-  {"id":"surplus-016","donorId":"donor-08","title":"Event pantry supplies","category":"Pantry","quantityKg":46,"portions":128,"availableFrom":"2026-07-19T10:00:00Z","collectBy":"2026-07-21T14:00:00Z","status":"Available","handling":"Ambient","city":"Bologna","latitude":44.5,"longitude":11.35,"notes":"Pasta, passata and sealed cooking oils."},
-  {"id":"surplus-017","donorId":"donor-09","title":"Citrus and tomatoes","category":"Produce","quantityKg":124,"portions":248,"availableFrom":"2026-07-18T12:00:00Z","collectBy":"2026-07-19T09:00:00Z","status":"Available","handling":"Ambient","city":"Valencia","latitude":39.48,"longitude":-0.39,"notes":"Harvest surplus in reusable crates."},
-  {"id":"surplus-018","donorId":"donor-09","recipientId":"recipient-09","title":"Fresh herb boxes","category":"Produce","quantityKg":16,"portions":80,"availableFrom":"2026-07-18T12:00:00Z","collectBy":"2026-07-18T18:00:00Z","collectedAt":"2026-07-18T17:24:00Z","status":"Collected","handling":"Chilled","city":"Valencia","latitude":39.48,"longitude":-0.39,"notes":"Parsley, coriander and mint."},
-  {"id":"surplus-019","donorId":"donor-10","title":"Chilled mixed groceries","category":"Mixed","quantityKg":83,"portions":192,"availableFrom":"2026-07-18T16:00:00Z","collectBy":"2026-07-18T20:30:00Z","status":"Available","handling":"Chilled","city":"Leipzig","latitude":51.35,"longitude":12.38,"notes":"Dairy, prepared salads and packaged vegetables."},
-  {"id":"surplus-020","donorId":"donor-10","title":"Dry goods assortment","category":"Pantry","quantityKg":105,"portions":315,"availableFrom":"2026-07-19T09:30:00Z","collectBy":"2026-07-21T17:00:00Z","status":"Reserved","handling":"Ambient","city":"Leipzig","latitude":51.35,"longitude":12.38,"notes":"Rice, pulses and cereal in intact retail packs."}
+  {"id":"surplus-001","donorId":"donor-01","title":"Seasonal vegetables","category":"Produce","quantityKg":86,"portions":172,"status":"Available","handling":"Ambient","city":"Dublin","latitude":53.346,"longitude":-6.267,"notes":"Mixed courgettes, peppers and carrots in stackable crates."},
+  {"id":"surplus-002","donorId":"donor-01","title":"Deli sandwiches","category":"Prepared meals","quantityKg":34,"portions":92,"status":"Reserved","handling":"Chilled","city":"Dublin","latitude":53.346,"longitude":-6.267,"notes":"Individually labelled; mixed vegetarian and chicken fillings."},
+  {"id":"surplus-003","donorId":"donor-02","title":"Sourdough and rolls","category":"Bakery","quantityKg":42,"portions":126,"status":"Available","handling":"Ambient","city":"Cork","latitude":51.901,"longitude":-8.468,"notes":"Packed in food-safe paper sacks."},
+  {"id":"surplus-004","donorId":"donor-02","recipientId":"recipient-02","title":"Breakfast pastries","category":"Bakery","quantityKg":18,"portions":72,"status":"Collected","handling":"Ambient","city":"Cork","latitude":51.901,"longitude":-8.468,"notes":"Contains gluten, dairy and nuts."},
+  {"id":"surplus-005","donorId":"donor-03","title":"Conference lunch trays","category":"Prepared meals","quantityKg":64,"portions":118,"status":"Available","handling":"Chilled","city":"Brussels","latitude":50.855,"longitude":4.36,"notes":"Vegetarian grain bowls kept below 5°C."},
+  {"id":"surplus-006","donorId":"donor-03","title":"Unopened yoghurt pots","category":"Dairy","quantityKg":27,"portions":108,"status":"Reserved","handling":"Chilled","city":"Brussels","latitude":50.855,"longitude":4.36,"notes":"Use-by date follows the fictional collection window; sealed multipacks."},
+  {"id":"surplus-007","donorId":"donor-04","title":"Mixed salad vegetables","category":"Produce","quantityKg":112,"portions":224,"status":"Available","handling":"Chilled","city":"Rotterdam","latitude":51.918,"longitude":4.49,"notes":"Lettuce, cucumber and tomatoes; cosmetic imperfections only."},
+  {"id":"surplus-008","donorId":"donor-04","title":"Ripe stone fruit","category":"Produce","quantityKg":73,"portions":146,"status":"Available","handling":"Ambient","city":"Rotterdam","latitude":51.918,"longitude":4.49,"notes":"Ready to eat or cook within 24 hours."},
+  {"id":"surplus-009","donorId":"donor-05","title":"Rice and canned beans","category":"Pantry","quantityKg":95,"portions":285,"status":"Available","handling":"Ambient","city":"Porto","latitude":41.15,"longitude":-8.62,"notes":"Outer cartons damaged; primary packaging intact."},
+  {"id":"surplus-010","donorId":"donor-05","title":"Assorted grocery crates","category":"Mixed","quantityKg":58,"portions":140,"status":"Reserved","handling":"Ambient","city":"Porto","latitude":41.15,"longitude":-8.62,"notes":"Shelf-stable foods with full ingredient labels."},
+  {"id":"surplus-011","donorId":"donor-06","title":"Rye loaves","category":"Bakery","quantityKg":67,"portions":201,"status":"Available","handling":"Ambient","city":"Malmö","latitude":55.61,"longitude":13.01,"notes":"Unsliced loaves in reusable bakery crates."},
+  {"id":"surplus-012","donorId":"donor-06","recipientId":"recipient-06","title":"Cardamom buns","category":"Bakery","quantityKg":21,"portions":84,"status":"Collected","handling":"Ambient","city":"Malmö","latitude":55.61,"longitude":13.01,"notes":"Contains gluten and dairy."},
+  {"id":"surplus-013","donorId":"donor-07","title":"New-season potatoes","category":"Produce","quantityKg":140,"portions":280,"status":"Available","handling":"Ambient","city":"Tallinn","latitude":59.43,"longitude":24.74,"notes":"Washed and packed in 10 kg sacks."},
+  {"id":"surplus-014","donorId":"donor-07","title":"Carrots and beetroot","category":"Produce","quantityKg":88,"portions":176,"status":"Reserved","handling":"Ambient","city":"Tallinn","latitude":59.43,"longitude":24.74,"notes":"Mixed grade, suitable for cooking."},
+  {"id":"surplus-015","donorId":"donor-08","title":"Pasta meal portions","category":"Prepared meals","quantityKg":78,"portions":156,"status":"Available","handling":"Chilled","city":"Bologna","latitude":44.5,"longitude":11.35,"notes":"Tomato and vegetable pasta in sealed catering trays."},
+  {"id":"surplus-016","donorId":"donor-08","title":"Event pantry supplies","category":"Pantry","quantityKg":46,"portions":128,"status":"Available","handling":"Ambient","city":"Bologna","latitude":44.5,"longitude":11.35,"notes":"Pasta, passata and sealed cooking oils."},
+  {"id":"surplus-017","donorId":"donor-09","title":"Citrus and tomatoes","category":"Produce","quantityKg":124,"portions":248,"status":"Available","handling":"Ambient","city":"Valencia","latitude":39.48,"longitude":-0.39,"notes":"Harvest surplus in reusable crates."},
+  {"id":"surplus-018","donorId":"donor-09","recipientId":"recipient-09","title":"Fresh herb boxes","category":"Produce","quantityKg":16,"portions":80,"status":"Collected","handling":"Chilled","city":"Valencia","latitude":39.48,"longitude":-0.39,"notes":"Parsley, coriander and mint."},
+  {"id":"surplus-019","donorId":"donor-10","title":"Chilled mixed groceries","category":"Mixed","quantityKg":83,"portions":192,"status":"Available","handling":"Chilled","city":"Leipzig","latitude":51.35,"longitude":12.38,"notes":"Dairy, prepared salads and packaged vegetables."},
+  {"id":"surplus-020","donorId":"donor-10","title":"Dry goods assortment","category":"Pantry","quantityKg":105,"portions":315,"status":"Reserved","handling":"Ambient","city":"Leipzig","latitude":51.35,"longitude":12.38,"notes":"Rice, pulses and cereal in intact retail packs."}
 ]$surplus$::jsonb) as source(
   id text,
   "donorId" text,
@@ -151,6 +151,28 @@ from jsonb_to_recordset($surplus$[
   longitude double precision,
   notes text
 );
+
+update seed_surplus
+set
+  "collectedAt" = case
+    when status = 'Collected' and id = 'surplus-004' then now() - interval '2 hours'
+    when status = 'Collected' then
+      date_trunc('day', now())
+      - make_interval(days => 1 + (right(id, 3)::integer % 6))
+      + make_interval(hours => 10 + (right(id, 3)::integer % 8))
+    else null
+  end;
+
+update seed_surplus
+set
+  "collectBy" = case
+    when status = 'Collected' then "collectedAt" - interval '1 hour'
+    else date_trunc('day', now()) + make_interval(hours => 30 + ((right(id, 3)::integer * 11) % 40))
+  end;
+
+update seed_surplus
+set
+  "availableFrom" = "collectBy" - make_interval(hours => 4 + ((right(id, 3)::integer % 4) * 2));
 
 insert into public.organisations (
   id, legacy_id, slug, kind, name, organisation_type, status, description,
@@ -306,6 +328,24 @@ from seed_surplus
 where status = 'Collected'
 on conflict (id) do nothing;
 
+insert into public.delivery_confirmations (
+  id, resource_event_id, collection_id, confirmed_by_organisation_id,
+  delivered_quantity_kg, delivered_at, condition_note, is_public, created_at
+)
+select
+  md5('cultivate-next:delivery:' || id)::uuid,
+  public.resource_event_id_for_listing(md5('cultivate-next:listing:' || id)::uuid),
+  md5('cultivate-next:collection:' || id)::uuid,
+  md5('cultivate-next:organisation:' || "recipientId")::uuid,
+  "quantityKg",
+  "collectedAt" + interval '1 hour',
+  'Fictional recipient confirmed quantity and condition at delivery.',
+  true,
+  "collectedAt" + interval '1 hour'
+from seed_surplus
+where status = 'Collected'
+on conflict (id) do nothing;
+
 insert into public.impact_records (
   id, collection_id, organisation_id, food_redistributed_kg, estimated_meals,
   financial_value_eur, estimated_waste_avoided_kg, estimated_co2e_avoided_kg,
@@ -320,7 +360,7 @@ select
   round("quantityKg" * 5.75, 2),
   round("quantityKg" * 0.92, 2),
   round("quantityKg" * 2.15, 2),
-  'demo-v1',
+  'demo-v2-delivered-only',
   jsonb_build_object(
     'mealsPerKilogram', 2.4,
     'financialValuePerKilogramEur', 5.75,
@@ -328,7 +368,7 @@ select
     'co2eAvoidedPerKilogram', 2.15
   ),
   true,
-  "collectedAt"
+  "collectedAt" + interval '75 minutes'
 from seed_surplus
 where status = 'Collected'
 on conflict (id) do nothing;
@@ -337,20 +377,20 @@ insert into public.governance_resources (
   id, slug, title, summary, content, priority, area, effort_label, audience, status, published_at
 )
 values
-  (md5('cultivate-next:governance:roles')::uuid, 'clarify-match-approval-roles', 'Clarify match approval roles', 'Document who can reserve, approve and cancel a food transfer, including out-of-hours cover.', 'Use a named responsibility matrix for every stage of the collection workflow.', 'High', 'Accountability', '45 min', 'Network coordinators', 'published', '2026-07-01T09:00:00Z'),
-  (md5('cultivate-next:governance:privacy')::uuid, 'review-pickup-location-privacy', 'Review pickup-location privacy', 'Limit precise addresses and named contacts to confirmed participants in each transfer.', 'Review location visibility, participant access and retention at least quarterly.', 'High', 'Data stewardship', '1 hour', 'Data stewards', 'published', '2026-07-01T09:00:00Z'),
-  (md5('cultivate-next:governance:feedback')::uuid, 'close-recipient-feedback-loop', 'Close the recipient feedback loop', 'Add a lightweight post-collection check covering quantity, quality and unmet need.', 'Record structured feedback against the completed collection without collecting unnecessary personal data.', 'Medium', 'Learning', '2 hours', 'Recipient coordinators', 'published', '2026-07-01T09:00:00Z'),
-  (md5('cultivate-next:governance:representation')::uuid, 'broaden-citizen-representation', 'Broaden citizen representation', 'Invite recipient and volunteer representatives to the next quarterly coordination review.', 'Rotate participation and publish how community input changed operational decisions.', 'Medium', 'Participation', 'Half day', 'Governance leads', 'published', '2026-07-01T09:00:00Z')
+  (md5('cultivate-next:governance:roles')::uuid, 'clarify-match-approval-roles', 'Clarify match approval roles', 'Document who can reserve, approve and cancel a food transfer, including out-of-hours cover.', 'Use a named responsibility matrix for every stage of the collection workflow.', 'High', 'Accountability', '45 min', 'Network coordinators', 'published', now() - interval '18 days'),
+  (md5('cultivate-next:governance:privacy')::uuid, 'review-pickup-location-privacy', 'Review pickup-location privacy', 'Limit precise addresses and named contacts to confirmed participants in each transfer.', 'Review location visibility, participant access and retention at least quarterly.', 'High', 'Data stewardship', '1 hour', 'Data stewards', 'published', now() - interval '15 days'),
+  (md5('cultivate-next:governance:feedback')::uuid, 'close-recipient-feedback-loop', 'Close the recipient feedback loop', 'Add a lightweight post-collection check covering quantity, quality and unmet need.', 'Record structured feedback against the completed collection without collecting unnecessary personal data.', 'Medium', 'Learning', '2 hours', 'Recipient coordinators', 'published', now() - interval '12 days'),
+  (md5('cultivate-next:governance:representation')::uuid, 'broaden-citizen-representation', 'Broaden citizen representation', 'Invite recipient and volunteer representatives to the next quarterly coordination review.', 'Rotate participation and publish how community input changed operational decisions.', 'Medium', 'Participation', 'Half day', 'Governance leads', 'published', now() - interval '9 days')
 on conflict (id) do nothing;
 
 insert into public.engagement_resources (
   id, slug, title, summary, content, resource_type, audience, status, published_at
 )
 values
-  (md5('cultivate-next:engagement:priorities')::uuid, 'neighbourhood-food-priorities-canvas', 'Neighbourhood food priorities canvas', 'A 60-minute facilitated session for mapping needs, assets and participation barriers.', 'Fictional demonstration workshop outline for local adaptation.', 'Workshop', 'Residents and coordinators', 'published', '2026-07-01T09:00:00Z'),
-  (md5('cultivate-next:engagement:welcome')::uuid, 'inclusive-volunteer-welcome-pack', 'Inclusive volunteer welcome pack', 'Plain-language prompts covering access needs, expectations and ways to contribute.', 'Fictional template with prompts for an inclusive volunteer induction.', 'Template', 'Volunteer leads', 'published', '2026-07-01T09:00:00Z'),
-  (md5('cultivate-next:engagement:feedback')::uuid, 'community-feedback-without-survey-fatigue', 'Community feedback without survey fatigue', 'Five practical formats for gathering useful feedback during existing activities.', 'Fictional guide for low-burden community feedback.', 'Guide', 'Engagement teams', 'published', '2026-07-01T09:00:00Z'),
-  (md5('cultivate-next:engagement:practice')::uuid, 'shared-food-safety-briefing', 'Running a shared food-safety briefing', 'A fictional peer session from three demonstration initiatives.', '24 July, 14:00. Online demonstration session with 18 fictional places.', 'Practice exchange', 'Community of Practice', 'published', '2026-07-01T09:00:00Z')
+  (md5('cultivate-next:engagement:priorities')::uuid, 'neighbourhood-food-priorities-canvas', 'Neighbourhood food priorities canvas', 'A 60-minute facilitated session for mapping needs, assets and participation barriers.', 'Fictional demonstration workshop outline for local adaptation.', 'Workshop', 'Residents and coordinators', 'published', now() - interval '16 days'),
+  (md5('cultivate-next:engagement:welcome')::uuid, 'inclusive-volunteer-welcome-pack', 'Inclusive volunteer welcome pack', 'Plain-language prompts covering access needs, expectations and ways to contribute.', 'Fictional template with prompts for an inclusive volunteer induction.', 'Template', 'Volunteer leads', 'published', now() - interval '13 days'),
+  (md5('cultivate-next:engagement:feedback')::uuid, 'community-feedback-without-survey-fatigue', 'Community feedback without survey fatigue', 'Five practical formats for gathering useful feedback during existing activities.', 'Fictional guide for low-burden community feedback.', 'Guide', 'Engagement teams', 'published', now() - interval '10 days'),
+  (md5('cultivate-next:engagement:practice')::uuid, 'shared-food-safety-briefing', 'Running a shared food-safety briefing', 'A fictional peer session from three demonstration initiatives.', 'Next Thursday, 14:00. Online demonstration session with 18 fictional places.', 'Practice exchange', 'Community of Practice', 'published', now() - interval '7 days')
 on conflict (id) do nothing;
 
 end

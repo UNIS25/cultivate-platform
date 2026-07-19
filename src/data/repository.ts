@@ -1,14 +1,17 @@
 import { cache } from "react";
+import { getDemoListingSchedule } from "@/lib/demo-dates";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
-import type { Donor, FoodCategory, Initiative, Recipient, SurplusListing, Weekday } from "@/types/domain";
+import type { AuditEvent, Donor, FoodCategory, Initiative, Recipient, ResourceEvent, ResourceEventStatus, SurplusListing, Weekday } from "@/types/domain";
 
 type FoodCategoryRow = Database["public"]["Tables"]["food_categories"]["Row"];
 type OrganisationRow = Database["public"]["Tables"]["organisations"]["Row"];
 type OrganisationLocationRow = Database["public"]["Tables"]["organisation_locations"]["Row"];
 type OrganisationFoodCategoryRow = Database["public"]["Tables"]["organisation_food_categories"]["Row"];
 type SurplusListingRow = Database["public"]["Tables"]["surplus_listings"]["Row"];
+type CollectionRow = Database["public"]["Tables"]["collections"]["Row"];
+type ImpactRecordRow = Database["public"]["Tables"]["impact_records"]["Row"];
 type GovernanceResourceRow = Database["public"]["Tables"]["governance_resources"]["Row"];
 type EngagementResourceRow = Database["public"]["Tables"]["engagement_resources"]["Row"];
 
@@ -24,6 +27,7 @@ export interface NetworkSnapshot {
   donors: Donor[];
   recipients: Recipient[];
   surplusListings: SurplusListing[];
+  resourceEvents: ResourceEvent[];
   source: DataSourceState;
 }
 
@@ -60,6 +64,7 @@ const EMPTY_NETWORK: NetworkSnapshot = {
   donors: [],
   recipients: [],
   surplusListings: [],
+  resourceEvents: [],
   source: {
     status: "unconfigured",
     message: "Add the Supabase URL and publishable key to load the seeded demonstration workspace.",
@@ -174,11 +179,17 @@ function toSurplusListing(
   row: SurplusListingRow,
   locations: Map<string, OrganisationLocationRow>,
   categories: Map<string, FoodCategoryRow>,
+  snapshotNow: Date,
 ): SurplusListing | undefined {
   const location = locations.get(row.location_id);
   const categoryName = categories.get(row.food_category_id)?.name;
   if (!location || !categoryName || !foodCategoryValues.has(categoryName as FoodCategory)) return undefined;
   if (!(["available", "reserved", "collected"] as const).includes(row.status as "available" | "reserved" | "collected")) return undefined;
+
+  const status = row.status === "reserved" ? "Reserved" : row.status === "collected" ? "Collected" : "Available";
+  const demoSchedule = row.legacy_id?.startsWith("surplus-")
+    ? getDemoListingSchedule(row.legacy_id, status, snapshotNow)
+    : undefined;
 
   return {
     id: row.id,
@@ -188,16 +199,118 @@ function toSurplusListing(
     category: categoryName as FoodCategory,
     quantityKg: row.quantity_kg,
     portions: row.estimated_meals,
-    availableFrom: row.available_from,
-    collectBy: row.collection_deadline,
-    collectedAt: row.collected_at ?? undefined,
-    status: row.status === "reserved" ? "Reserved" : row.status === "collected" ? "Collected" : "Available",
+    availableFrom: demoSchedule?.availableFrom ?? row.available_from,
+    collectBy: demoSchedule?.collectBy ?? row.collection_deadline,
+    collectedAt: demoSchedule?.collectedAt ?? row.collected_at ?? undefined,
+    status,
     handling: row.handling === "chilled" ? "Chilled" : row.handling === "frozen" ? "Frozen" : "Ambient",
     city: location.city,
     latitude: location.latitude,
     longitude: location.longitude,
     notes: row.notes,
   };
+}
+
+function addHours(value: string, hours: number) {
+  return new Date(new Date(value).getTime() + hours * 60 * 60 * 1000).toISOString();
+}
+
+function buildDerivedAuditTrail(event: Omit<ResourceEvent, "auditTrail">): AuditEvent[] {
+  const entries: AuditEvent[] = [{
+    id: `${event.id}-created`,
+    resourceEventId: event.id,
+    eventType: "offer_created",
+    actorLabel: "Fictional food donor",
+    occurredAt: event.createdAt,
+    newStatus: "available",
+    note: "Offer entered the demonstration workflow.",
+  }];
+
+  if (event.matchedAt) entries.push({
+    id: `${event.id}-matched`, resourceEventId: event.id, eventType: "match_proposed",
+    actorLabel: "Rules-based matching service", occurredAt: event.matchedAt,
+    previousStatus: "available", newStatus: "matched", note: "A compatible recipient was proposed.",
+  });
+  if (event.acceptedAt) entries.push({
+    id: `${event.id}-accepted`, resourceEventId: event.id, eventType: "recipient_accepted",
+    actorLabel: "Fictional recipient coordinator", occurredAt: event.acceptedAt,
+    previousStatus: "matched", newStatus: "accepted", note: "Recipient acceptance recorded.",
+  });
+  if (event.collectedAt) entries.push({
+    id: `${event.id}-collected`, resourceEventId: event.id, eventType: "collection_confirmed",
+    actorLabel: "Fictional collection coordinator", occurredAt: event.collectedAt,
+    previousStatus: "accepted", newStatus: "collected", note: "Collection handover confirmed.",
+  });
+  if (event.deliveredAt) entries.push({
+    id: `${event.id}-delivered`, resourceEventId: event.id, eventType: "delivery_confirmed",
+    actorLabel: "Fictional recipient coordinator", occurredAt: event.deliveredAt,
+    previousStatus: "collected", newStatus: "delivered", note: "Delivery and quantity confirmed.",
+  });
+  if (event.impactRecordedAt) entries.push({
+    id: `${event.id}-impact`, resourceEventId: event.id, eventType: "impact_recorded",
+    actorLabel: "CULTIVATE Next impact calculator", occurredAt: event.impactRecordedAt,
+    previousStatus: "delivered", newStatus: "delivered", note: "Demonstration estimates calculated from confirmed delivery.",
+  });
+  return entries;
+}
+
+function toResourceEvents(
+  listings: SurplusListing[],
+  donors: Donor[],
+  recipients: Recipient[],
+  collections: CollectionRow[],
+  impacts: ImpactRecordRow[],
+): ResourceEvent[] {
+  const collectionByListing = new Map(collections.map((item) => [item.listing_id, item]));
+  const impactByCollection = new Map(impacts.map((item) => [item.collection_id, item]));
+
+  return listings.flatMap((listing) => {
+    const donor = donors.find((item) => item.id === listing.donorId);
+    if (!donor) return [];
+    const recipient = recipients.find((item) => item.id === listing.recipientId);
+    const collection = collectionByListing.get(listing.id);
+    const impact = collection ? impactByCollection.get(collection.id) : undefined;
+    const delivered = Boolean(impact && listing.collectedAt);
+    const matchedAt = listing.status === "Reserved" || listing.status === "Collected" ? addHours(listing.availableFrom, 0.5) : undefined;
+    const acceptedAt = listing.status === "Collected" && listing.collectedAt ? addHours(listing.collectedAt, -2) : undefined;
+    const deliveredAt = delivered && listing.collectedAt ? addHours(listing.collectedAt, 1) : undefined;
+    const status: ResourceEventStatus = delivered
+      ? "delivered"
+      : listing.status === "Collected"
+        ? "collected"
+        : listing.status === "Reserved"
+          ? "matched"
+          : "available";
+    const withoutAudit: Omit<ResourceEvent, "auditTrail"> = {
+      id: `resource-${listing.id}`,
+      organisationId: listing.donorId,
+      sourceType: "surplus_listing",
+      sourceId: listing.id,
+      materialCategory: listing.category,
+      quantityKg: listing.quantityKg,
+      status,
+      sourceLocation: `${listing.city}, generalised area`,
+      destinationId: listing.recipientId,
+      collectionId: collection?.id,
+      impactRecordId: impact?.id,
+      matchedAt,
+      acceptedAt,
+      collectedAt: listing.collectedAt,
+      deliveredAt,
+      impactRecordedAt: impact?.recorded_at,
+      createdAt: listing.availableFrom,
+      updatedAt: impact?.recorded_at ?? deliveredAt ?? listing.collectedAt ?? matchedAt ?? listing.availableFrom,
+      title: listing.title,
+      city: listing.city,
+      country: donor.country,
+      donorName: donor.name,
+      donorType: donor.type,
+      recipientName: recipient?.name,
+      recipientType: recipient?.type,
+      collectionDeadline: listing.collectBy,
+    };
+    return [{ ...withoutAudit, auditTrail: buildDerivedAuditTrail(withoutAudit) }];
+  });
 }
 
 function repositoryError(message: string): DataSourceState {
@@ -210,19 +323,23 @@ export const getNetworkSnapshot = cache(async (): Promise<NetworkSnapshot> => {
 
   try {
     const supabase = await createSupabaseServerClient();
-    const [organisationsResult, locationsResult, categoriesResult, membershipsResult, listingsResult] = await Promise.all([
+    const [organisationsResult, locationsResult, categoriesResult, membershipsResult, listingsResult, collectionsResult, impactsResult] = await Promise.all([
       supabase.from("organisations").select("*").order("name"),
       supabase.from("organisation_locations").select("*").order("is_primary", { ascending: false }),
       supabase.from("food_categories").select("*").order("sort_order"),
       supabase.from("organisation_food_categories").select("*").order("priority", { ascending: false }),
       supabase.from("surplus_listings").select("*").order("collection_deadline"),
+      supabase.from("collections").select("*").eq("is_public", true).order("completed_at", { ascending: false }),
+      supabase.from("impact_records").select("*").eq("is_public", true).order("recorded_at", { ascending: false }),
     ]);
 
     const error = organisationsResult.error
       ?? locationsResult.error
       ?? categoriesResult.error
       ?? membershipsResult.error
-      ?? listingsResult.error;
+      ?? listingsResult.error
+      ?? collectionsResult.error
+      ?? impactsResult.error;
     if (error) return { ...EMPTY_NETWORK, source: repositoryError(error.message) };
 
     const organisations = organisationsResult.data as OrganisationRow[];
@@ -240,14 +357,23 @@ export const getNetworkSnapshot = cache(async (): Promise<NetworkSnapshot> => {
     const recipients = organisations
       .filter((item) => item.kind === "recipient" || item.kind === "hybrid")
       .flatMap((item) => toRecipient(item, locations, memberships, categoryMap) ?? []);
+    const snapshotNow = new Date();
     const surplusListings = (listingsResult.data as SurplusListingRow[])
-      .flatMap((item) => toSurplusListing(item, locationMap, categoryMap) ?? []);
+      .flatMap((item) => toSurplusListing(item, locationMap, categoryMap, snapshotNow) ?? []);
+    const resourceEvents = toResourceEvents(
+      surplusListings,
+      donors,
+      recipients,
+      collectionsResult.data as CollectionRow[],
+      impactsResult.data as ImpactRecordRow[],
+    );
 
     return {
       initiatives,
       donors,
       recipients,
       surplusListings,
+      resourceEvents,
       source: { status: "ready" },
     };
   } catch (error) {

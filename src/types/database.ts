@@ -9,6 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          acting_organisation_id: string | null
+          acting_user_id: string | null
+          actor_label: string
+          created_at: string
+          event_type: string
+          id: string
+          new_status:
+            | Database["public"]["Enums"]["resource_event_status"]
+            | null
+          note: string | null
+          occurred_at: string
+          previous_status:
+            | Database["public"]["Enums"]["resource_event_status"]
+            | null
+          resource_event_id: string
+        }
+        Insert: {
+          acting_organisation_id?: string | null
+          acting_user_id?: string | null
+          actor_label?: string
+          created_at?: string
+          event_type: string
+          id?: string
+          new_status?:
+            | Database["public"]["Enums"]["resource_event_status"]
+            | null
+          note?: string | null
+          occurred_at?: string
+          previous_status?:
+            | Database["public"]["Enums"]["resource_event_status"]
+            | null
+          resource_event_id: string
+        }
+        Update: {
+          acting_organisation_id?: string | null
+          acting_user_id?: string | null
+          actor_label?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          new_status?:
+            | Database["public"]["Enums"]["resource_event_status"]
+            | null
+          note?: string | null
+          occurred_at?: string
+          previous_status?:
+            | Database["public"]["Enums"]["resource_event_status"]
+            | null
+          resource_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_acting_organisation_id_fkey"
+            columns: ["acting_organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_events_resource_event_id_fkey"
+            columns: ["resource_event_id"]
+            isOneToOne: false
+            referencedRelation: "resource_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collections: {
         Row: {
           completed_at: string | null
@@ -23,6 +92,7 @@ export type Database = {
           notes: string
           quantity_kg: number
           recipient_organisation_id: string
+          resource_event_id: string | null
           scheduled_at: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["collection_status"]
@@ -41,6 +111,7 @@ export type Database = {
           notes?: string
           quantity_kg: number
           recipient_organisation_id: string
+          resource_event_id?: string | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["collection_status"]
@@ -59,6 +130,7 @@ export type Database = {
           notes?: string
           quantity_kg?: number
           recipient_organisation_id?: string
+          resource_event_id?: string | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["collection_status"]
@@ -98,6 +170,74 @@ export type Database = {
             columns: ["recipient_organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_resource_event_id_fkey"
+            columns: ["resource_event_id"]
+            isOneToOne: true
+            referencedRelation: "resource_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_confirmations: {
+        Row: {
+          collection_id: string
+          condition_note: string
+          confirmed_by_organisation_id: string
+          created_at: string
+          created_by: string | null
+          delivered_at: string
+          delivered_quantity_kg: number
+          id: string
+          is_public: boolean
+          resource_event_id: string
+        }
+        Insert: {
+          collection_id: string
+          condition_note?: string
+          confirmed_by_organisation_id: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at: string
+          delivered_quantity_kg: number
+          id?: string
+          is_public?: boolean
+          resource_event_id: string
+        }
+        Update: {
+          collection_id?: string
+          condition_note?: string
+          confirmed_by_organisation_id?: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string
+          delivered_quantity_kg?: number
+          id?: string
+          is_public?: boolean
+          resource_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_confirmations_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: true
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_confirmations_confirmed_by_organisation_id_fkey"
+            columns: ["confirmed_by_organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_confirmations_resource_event_id_fkey"
+            columns: ["resource_event_id"]
+            isOneToOne: true
+            referencedRelation: "resource_events"
             referencedColumns: ["id"]
           },
         ]
@@ -241,6 +381,7 @@ export type Database = {
           collection_id: string
           created_at: string
           created_by: string | null
+          delivery_confirmation_id: string | null
           estimated_co2e_avoided_kg: number | null
           estimated_meals: number
           estimated_waste_avoided_kg: number
@@ -250,6 +391,7 @@ export type Database = {
           is_public: boolean
           organisation_id: string | null
           recorded_at: string
+          resource_event_id: string | null
         }
         Insert: {
           assumptions_snapshot: Json
@@ -257,6 +399,7 @@ export type Database = {
           collection_id: string
           created_at?: string
           created_by?: string | null
+          delivery_confirmation_id?: string | null
           estimated_co2e_avoided_kg?: number | null
           estimated_meals: number
           estimated_waste_avoided_kg: number
@@ -266,6 +409,7 @@ export type Database = {
           is_public?: boolean
           organisation_id?: string | null
           recorded_at?: string
+          resource_event_id?: string | null
         }
         Update: {
           assumptions_snapshot?: Json
@@ -273,6 +417,7 @@ export type Database = {
           collection_id?: string
           created_at?: string
           created_by?: string | null
+          delivery_confirmation_id?: string | null
           estimated_co2e_avoided_kg?: number | null
           estimated_meals?: number
           estimated_waste_avoided_kg?: number
@@ -282,6 +427,7 @@ export type Database = {
           is_public?: boolean
           organisation_id?: string | null
           recorded_at?: string
+          resource_event_id?: string | null
         }
         Relationships: [
           {
@@ -292,10 +438,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "impact_records_delivery_confirmation_id_fkey"
+            columns: ["delivery_confirmation_id"]
+            isOneToOne: true
+            referencedRelation: "delivery_confirmations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "impact_records_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impact_records_resource_event_id_fkey"
+            columns: ["resource_event_id"]
+            isOneToOne: true
+            referencedRelation: "resource_events"
             referencedColumns: ["id"]
           },
         ]
@@ -312,6 +472,7 @@ export type Database = {
           listing_id: string
           recipient_organisation_id: string
           recommended_at: string
+          resource_event_id: string | null
           responded_at: string | null
           score: number
           score_breakdown: Json
@@ -330,6 +491,7 @@ export type Database = {
           listing_id: string
           recipient_organisation_id: string
           recommended_at?: string
+          resource_event_id?: string | null
           responded_at?: string | null
           score: number
           score_breakdown?: Json
@@ -348,6 +510,7 @@ export type Database = {
           listing_id?: string
           recipient_organisation_id?: string
           recommended_at?: string
+          resource_event_id?: string | null
           responded_at?: string | null
           score?: number
           score_breakdown?: Json
@@ -368,6 +531,13 @@ export type Database = {
             columns: ["recipient_organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_resource_event_id_fkey"
+            columns: ["resource_event_id"]
+            isOneToOne: false
+            referencedRelation: "resource_events"
             referencedColumns: ["id"]
           },
         ]
@@ -551,6 +721,128 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_events: {
+        Row: {
+          accepted_at: string | null
+          collected_at: string | null
+          collection_id: string | null
+          created_at: string
+          created_by: string | null
+          current_match_id: string | null
+          delivered_at: string | null
+          delivery_confirmation_id: string | null
+          destination_id: string | null
+          id: string
+          impact_record_id: string | null
+          impact_recorded_at: string | null
+          matched_at: string | null
+          material_category: string
+          organisation_id: string
+          quantity_kg: number
+          source_id: string
+          source_location: string
+          source_type: string
+          status: Database["public"]["Enums"]["resource_event_status"]
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          collected_at?: string | null
+          collection_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_match_id?: string | null
+          delivered_at?: string | null
+          delivery_confirmation_id?: string | null
+          destination_id?: string | null
+          id?: string
+          impact_record_id?: string | null
+          impact_recorded_at?: string | null
+          matched_at?: string | null
+          material_category: string
+          organisation_id: string
+          quantity_kg: number
+          source_id: string
+          source_location: string
+          source_type: string
+          status?: Database["public"]["Enums"]["resource_event_status"]
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          collected_at?: string | null
+          collection_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_match_id?: string | null
+          delivered_at?: string | null
+          delivery_confirmation_id?: string | null
+          destination_id?: string | null
+          id?: string
+          impact_record_id?: string | null
+          impact_recorded_at?: string | null
+          matched_at?: string | null
+          material_category?: string
+          organisation_id?: string
+          quantity_kg?: number
+          source_id?: string
+          source_location?: string
+          source_type?: string
+          status?: Database["public"]["Enums"]["resource_event_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_events_collection_fk"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_events_current_match_fk"
+            columns: ["current_match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_events_delivery_confirmation_fk"
+            columns: ["delivery_confirmation_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_confirmations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_events_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_events_impact_record_fk"
+            columns: ["impact_record_id"]
+            isOneToOne: false
+            referencedRelation: "impact_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_events_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_events_source_location_fkey"
+            columns: ["source_location"]
+            isOneToOne: false
+            referencedRelation: "organisation_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       surplus_listings: {
         Row: {
           available_from: string
@@ -689,18 +981,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_type_for_status: {
+        Args: {
+          target_status: Database["public"]["Enums"]["resource_event_status"]
+        }
+        Returns: string
+      }
       can_access_collection: {
         Args: { target_collection_id: string }
+        Returns: boolean
+      }
+      can_access_resource_event: {
+        Args: { target_resource_event_id: string }
         Returns: boolean
       }
       can_manage_organisation: {
         Args: { target_organisation_id: string }
         Returns: boolean
       }
+      can_manage_resource_event: {
+        Args: { target_resource_event_id: string }
+        Returns: boolean
+      }
       current_user_organisation_id: { Args: never; Returns: string }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_transparency_statistics: {
+        Args: { as_of_date?: string }
+        Returns: Json
       }
       is_organisation_member: {
         Args: { target_organisation_id: string }
@@ -714,6 +1024,22 @@ export type Database = {
       location_belongs_to_organisation: {
         Args: { target_location_id: string; target_organisation_id: string }
         Returns: boolean
+      }
+      resource_event_id_for_listing: {
+        Args: { target_listing_id: string }
+        Returns: string
+      }
+      resource_status_from_listing: {
+        Args: { target_status: Database["public"]["Enums"]["listing_status"] }
+        Returns: Database["public"]["Enums"]["resource_event_status"]
+      }
+      transition_resource_event: {
+        Args: {
+          target_resource_event_id: string
+          target_status: Database["public"]["Enums"]["resource_event_status"]
+          transition_note?: string
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -740,6 +1066,15 @@ export type Database = {
         | "cancelled"
       organisation_kind: "initiative" | "donor" | "recipient" | "hybrid"
       organisation_status: "active" | "pilot" | "seasonal" | "inactive"
+      resource_event_status:
+        | "draft"
+        | "available"
+        | "matched"
+        | "accepted"
+        | "collected"
+        | "delivered"
+        | "cancelled"
+        | "expired"
       resource_status: "draft" | "published" | "archived"
       user_role:
         | "viewer"
@@ -899,6 +1234,16 @@ export const Constants = {
       ],
       organisation_kind: ["initiative", "donor", "recipient", "hybrid"],
       organisation_status: ["active", "pilot", "seasonal", "inactive"],
+      resource_event_status: [
+        "draft",
+        "available",
+        "matched",
+        "accepted",
+        "collected",
+        "delivered",
+        "cancelled",
+        "expired",
+      ],
       resource_status: ["draft", "published", "archived"],
       user_role: [
         "viewer",

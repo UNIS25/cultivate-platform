@@ -1,181 +1,86 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState, type ComponentType } from "react";
 import {
   Building2,
   CheckCircle2,
   Download,
   Euro,
+  Filter,
   Info,
+  Leaf,
   Recycle,
   Scale,
   Settings2,
+  TrendingUp,
   Utensils,
   Users,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { IMPACT_ASSUMPTIONS } from "@/config/impact-assumptions";
-import type { ImpactReport } from "@/features/impact/calculations";
+import { calculateImpactReport, type ImpactFilters } from "@/features/impact/calculations";
 import { cn, formatDateTime, formatNumber } from "@/lib/format";
+import type { FoodCategory, ResourceEvent } from "@/types/domain";
 
-const currencyFormatter = new Intl.NumberFormat("en-IE", {
-  style: "currency",
-  currency: "EUR",
-});
-
-type MetricTone = "green" | "blue" | "amber" | "red";
-
-interface MetricItem {
-  label: string;
-  value: string;
-  detail: string;
-  type: "direct" | "estimate";
-  icon: LucideIcon;
-  tone: MetricTone;
-}
-
-const iconTones: Record<MetricTone, string> = {
-  green: "bg-[var(--green-soft)] text-[var(--green)]",
-  blue: "bg-[var(--blue-soft)] text-[var(--blue)]",
-  amber: "bg-[var(--amber-soft)] text-[var(--amber)]",
-  red: "bg-[var(--red-soft)] text-[var(--red)]",
-};
+const currencyFormatter = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
+const fieldClass = "h-10 w-full rounded-[2px] border border-[var(--line-strong)] bg-white px-3 text-xs font-semibold outline-none focus:border-[var(--blue)]";
 
 function csvCell(value: string | number) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
-function ImpactMetric({ item }: { item: MetricItem }) {
-  const estimated = item.type === "estimate";
-
+function Metric({
+  label,
+  value,
+  detail,
+  estimate,
+  icon: Icon,
+  tone = "green",
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  estimate?: boolean;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  tone?: "green" | "blue" | "amber" | "red";
+}) {
+  const toneClass = tone === "blue" ? "bg-[var(--blue-soft)] text-[var(--blue)]" : tone === "amber" ? "bg-[var(--amber-soft)] text-[var(--amber)]" : tone === "red" ? "bg-[var(--red-soft)] text-[var(--red)]" : "bg-[var(--green-soft)] text-[var(--green)]";
   return (
-    <article className="group relative flex min-h-[190px] min-w-0 flex-col bg-white p-5 transition-colors hover:bg-[var(--surface-raised)] sm:p-6">
-      <span className={cn("absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform group-hover:scale-x-100", item.tone === "blue" ? "bg-[var(--blue)]" : item.tone === "amber" ? "bg-[var(--amber)]" : item.tone === "red" ? "bg-[var(--coral)]" : "bg-[var(--green)]")} />
-      <div className="flex items-start justify-between gap-3">
-        <Badge tone={estimated ? "amber" : "green"}>
-          {estimated ? "Demo estimate" : "Direct record"}
-        </Badge>
-        <span className={cn("grid size-9 shrink-0 place-items-center rounded-[2px]", iconTones[item.tone])}>
-          <item.icon aria-hidden="true" size={18} />
-        </span>
-      </div>
-      <p className="mt-6 text-3xl font-semibold leading-none text-[var(--ink)]">{item.value}</p>
-      <h2 className="mt-2 text-sm font-bold leading-5">{item.label}</h2>
-      <p className="mt-auto pt-3 text-xs leading-5 text-[var(--muted)]">{item.detail}</p>
+    <article className="min-h-44 bg-white p-5">
+      <div className="flex items-start justify-between gap-3"><Badge tone={estimate ? "amber" : "green"}>{estimate ? "Demo estimate" : "Direct record"}</Badge><span className={cn("grid size-9 place-items-center", toneClass)}><Icon size={18} /></span></div>
+      <p className="mt-5 text-3xl font-semibold leading-none">{value}</p>
+      <h2 className="mt-2 text-sm font-bold">{label}</h2>
+      <p className="mt-3 text-xs leading-5 text-[var(--muted)]">{detail}</p>
     </article>
   );
 }
 
-export function ImpactDashboard({ report }: { report: ImpactReport }) {
+export function ImpactDashboard({ events }: { events: ResourceEvent[] }) {
+  const [filters, setFilters] = useState<ImpactFilters>({});
+  const report = useMemo(() => calculateImpactReport(events, filters), [events, filters]);
+  const cities = useMemo(() => [...new Set(events.map((event) => event.city))].sort(), [events]);
+  const organisationTypes = useMemo(() => [...new Set(events.map((event) => event.donorType))].sort(), [events]);
+  const categories = useMemo(() => [...new Set(events.map((event) => event.materialCategory))].sort(), [events]);
   const { metrics } = report;
-  const metricItems: MetricItem[] = [
-    {
-      label: "Food redistributed",
-      value: `${formatNumber(metrics.redistributedKg)} kg`,
-      detail: `Sum of ${metrics.collectionsCompleted} collected listing quantities`,
-      type: "direct",
-      icon: Scale,
-      tone: "green",
-    },
-    {
-      label: "Estimated meals provided",
-      value: formatNumber(metrics.estimatedMeals),
-      detail: `${formatNumber(metrics.redistributedKg)} kg x ${IMPACT_ASSUMPTIONS.mealsPerKilogram.value} meals per kg`,
-      type: "estimate",
-      icon: Utensils,
-      tone: "blue",
-    },
-    {
-      label: "Estimated financial value",
-      value: currencyFormatter.format(metrics.financialValueEur),
-      detail: `${formatNumber(metrics.redistributedKg)} kg x ${currencyFormatter.format(IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.value)} per kg`,
-      type: "estimate",
-      icon: Euro,
-      tone: "amber",
-    },
-    {
-      label: "Collections completed",
-      value: formatNumber(metrics.collectionsCompleted),
-      detail: "Listings with a Collected status",
-      type: "direct",
-      icon: CheckCircle2,
-      tone: "blue",
-    },
-    {
-      label: "Recipient organisations supported",
-      value: formatNumber(metrics.recipientOrganisationsSupported),
-      detail: "Unique recipients linked to completed collections",
-      type: "direct",
-      icon: Users,
-      tone: "green",
-    },
-    {
-      label: "Estimated waste avoided",
-      value: `${formatNumber(metrics.estimatedWasteAvoidedKg)} kg`,
-      detail: `${formatNumber(metrics.redistributedKg)} kg x ${IMPACT_ASSUMPTIONS.wasteAvoidanceRate.value * 100}% avoidance rate`,
-      type: "estimate",
-      icon: Recycle,
-      tone: "red",
-    },
-  ];
 
-  const assumptionRows = [
-    {
-      name: IMPACT_ASSUMPTIONS.mealsPerKilogram.label,
-      value: `${IMPACT_ASSUMPTIONS.mealsPerKilogram.value} meals per kg`,
-      description: IMPACT_ASSUMPTIONS.mealsPerKilogram.description,
-      scope: "Impact dashboard",
-    },
-    {
-      name: IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.label,
-      value: `${currencyFormatter.format(IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.value)} per kg`,
-      description: IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.description,
-      scope: "Impact dashboard",
-    },
-    {
-      name: IMPACT_ASSUMPTIONS.wasteAvoidanceRate.label,
-      value: `${IMPACT_ASSUMPTIONS.wasteAvoidanceRate.value * 100}% of redistributed kg`,
-      description: IMPACT_ASSUMPTIONS.wasteAvoidanceRate.description,
-      scope: "Impact dashboard",
-    },
-    {
-      name: IMPACT_ASSUMPTIONS.co2eAvoidedPerKilogram.label,
-      value: `${IMPACT_ASSUMPTIONS.co2eAvoidedPerKilogram.value} kg CO2e per kg`,
-      description: IMPACT_ASSUMPTIONS.co2eAvoidedPerKilogram.description,
-      scope: "Surplus report calculator",
-    },
-  ];
+  function updateFilter<K extends keyof ImpactFilters>(key: K, value: ImpactFilters[K]) {
+    setFilters((current) => ({ ...current, [key]: value || undefined }));
+  }
 
   function downloadCsv() {
     const rows: Array<Array<string | number>> = [
       ["record_type", "name", "value", "unit_or_scope", "basis"],
-      ["metric", "Food redistributed", metrics.redistributedKg, "kg", "Completed listing quantity"],
-      ["metric", "Estimated meals provided", metrics.estimatedMeals, "meals", "Demonstration assumption"],
+      ["metric", "Food redistributed", metrics.redistributedKg, "kg", "Delivered resource events only"],
+      ["metric", "Estimated meals", metrics.estimatedMeals, "meals", "Demonstration assumption"],
       ["metric", "Estimated financial value", metrics.financialValueEur, "EUR", "Demonstration assumption"],
-      ["metric", "Collections completed", metrics.collectionsCompleted, "collections", "Collected status records"],
-      ["metric", "Recipient organisations supported", metrics.recipientOrganisationsSupported, "organisations", "Unique linked recipient IDs"],
-      ["metric", "Estimated waste avoided", metrics.estimatedWasteAvoidedKg, "kg", "Demonstration assumption"],
-      ...assumptionRows.map((item) => ["assumption", item.name, item.value, item.scope, item.description]),
-      ...report.completedCollections.map((item) => [
-        "collection",
-        item.title,
-        item.kilograms,
-        "kg",
-        `${item.recipientName}; ${item.category}; collected ${item.collectedAt}`,
-      ]),
+      ["metric", "Estimated CO2e avoided", metrics.estimatedCo2eAvoidedKg, "kg CO2e", "Demonstration assumption"],
+      ["metric", "Landfill diversion", metrics.landfillDiversionKg, "kg", "Demonstration assumption"],
+      ["metric", "Collection success rate", metrics.collectionSuccessRate, "%", "Delivered / terminal collection attempts"],
+      ...report.deliveredEvents.map((event) => ["delivery", event.title, event.kilograms, "kg", `${event.city}; ${event.category}; delivered ${event.deliveredAt}`]),
     ];
-    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const url = URL.createObjectURL(new Blob([rows.map((row) => row.map(csvCell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = "cultivate-next-demo-impact.csv";
@@ -185,164 +90,61 @@ export function ImpactDashboard({ report }: { report: ImpactReport }) {
     URL.revokeObjectURL(url);
   }
 
+  const assumptionRows = [
+    [IMPACT_ASSUMPTIONS.mealsPerKilogram.label, `${IMPACT_ASSUMPTIONS.mealsPerKilogram.value} meals per kg`, IMPACT_ASSUMPTIONS.mealsPerKilogram.description],
+    [IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.label, `${currencyFormatter.format(IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.value)} per kg`, IMPACT_ASSUMPTIONS.financialValuePerKilogramEur.description],
+    ["Landfill diversion", `${IMPACT_ASSUMPTIONS.wasteAvoidanceRate.value * 100}% of delivered kg`, IMPACT_ASSUMPTIONS.wasteAvoidanceRate.description],
+    [IMPACT_ASSUMPTIONS.co2eAvoidedPerKilogram.label, `${IMPACT_ASSUMPTIONS.co2eAvoidedPerKilogram.value} kg CO2e per kg`, IMPACT_ASSUMPTIONS.co2eAvoidedPerKilogram.description],
+  ];
+
   return (
     <>
-      <section className="cn-enter-delay mt-6 flex flex-col gap-4 border border-[var(--ink)] bg-[var(--acid)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5" aria-label="Impact reporting scope">
-        <div className="flex items-start gap-3">
-          <Info aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--ink)]" size={18} />
-          <div>
-            <p className="text-sm font-bold">Completed demonstration collections only</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--ink)]/65">
-              Direct metrics use Supabase Collected records. Calculated outcomes use the labelled demonstration assumptions below.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={downloadCsv}
-          className="inline-flex min-h-10 w-fit shrink-0 items-center gap-2 rounded-[2px] border border-[var(--ink)] bg-[var(--ink)] px-3 text-xs font-bold text-white transition-colors hover:bg-[var(--green)]"
-        >
-          <Download aria-hidden="true" size={16} />
-          Export CSV
-        </button>
-      </section>
-
-      <section aria-label="Impact summary" className="cn-panel mt-5 grid gap-px overflow-hidden bg-[var(--line)] sm:grid-cols-2 xl:grid-cols-3">
-        {metricItems.map((item) => <ImpactMetric key={item.label} item={item} />)}
-      </section>
-
-      <section aria-labelledby="assumptions-title" className="mt-5 border border-[var(--ink)] bg-white">
-        <div className="flex flex-col gap-4 border-b border-[var(--line)] bg-[var(--ink)] p-5 text-white sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Settings2 aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--acid)]" size={19} />
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 id="assumptions-title" className="text-sm font-bold">Demonstration assumptions</h2>
-                <Badge tone="blue">{report.assumptionsVersion}</Badge>
-              </div>
-              <p className="mt-2 max-w-3xl text-xs leading-5 text-white/55">
-                Illustrative, not audited. Edit all conversion factors in <code className="font-bold text-[var(--acid)]">src/config/impact-assumptions.ts</code>.
-              </p>
-            </div>
-          </div>
-          <Badge tone="amber" className="w-fit shrink-0">Demo values only</Badge>
-        </div>
-        <div className="divide-y divide-[var(--line)]">
-          {assumptionRows.map((item) => (
-            <div key={item.name} className="cn-row-action grid gap-2 px-5 py-4 md:grid-cols-[minmax(0,1fr)_210px_minmax(0,1.4fr)] md:items-center md:gap-5">
-              <div>
-                <p className="text-xs font-bold">{item.name}</p>
-                <p className="mt-1 text-[11px] text-[var(--muted)]">{item.scope}</p>
-              </div>
-              <p className="text-sm font-bold text-[var(--blue)]">{item.value}</p>
-              <p className="text-xs leading-5 text-[var(--muted)]">{item.description}</p>
-            </div>
-          ))}
+      <section className="cn-enter-delay mt-6 border border-[var(--ink)] bg-[var(--acid)] p-4 sm:p-5" aria-label="Impact reporting scope">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3"><Info className="mt-0.5 shrink-0" size={18} /><div><p className="text-sm font-bold">Delivered resource events only</p><p className="mt-1 max-w-3xl text-xs leading-5 text-[var(--ink)]/65">Impact is generated after delivery confirmation. Every calculated figure is a fictional demonstration estimate, not an audited claim.</p></div></div>
+          <button type="button" onClick={downloadCsv} className="inline-flex min-h-10 w-fit shrink-0 items-center gap-2 rounded-[2px] border border-[var(--ink)] bg-[var(--ink)] px-3 text-xs font-bold text-white hover:bg-[var(--green)]"><Download size={16} /> Export CSV</button>
         </div>
       </section>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-2">
-        <section className="cn-panel p-4 sm:p-5" aria-labelledby="pipeline-title">
-          <h2 id="pipeline-title" className="text-sm font-bold">Listing pipeline by status</h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">Kilograms across all 20 Supabase demonstration listings</p>
-          <div className="mt-5 h-[270px] min-w-0" role="img" aria-label="Bar chart of listing kilograms by status">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={report.statusBreakdown} margin={{ top: 8, right: 8, left: -15, bottom: 0 }}>
-                <CartesianGrid stroke="#e3e8e5" vertical={false} />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#66736d", fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#66736d", fontSize: 11 }} />
-                <Tooltip cursor={{ fill: "#f1f4ef" }} contentStyle={{ border: "1px solid #111814", borderRadius: 2, fontSize: 12, boxShadow: "4px 4px 0 rgba(17,24,20,.12)" }} />
-                <Bar dataKey="kilograms" name="Kilograms" radius={[2, 2, 0, 0]} isAnimationActive={false}>
-                  {report.statusBreakdown.map((entry) => <Cell key={entry.label} fill={entry.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        <section className="cn-panel p-4 sm:p-5" aria-labelledby="category-title">
-          <h2 id="category-title" className="text-sm font-bold">Redistributed food by category</h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">Completed collection quantities only</p>
-          <div className="mt-5 h-[270px] min-w-0" role="img" aria-label="Bar chart of redistributed kilograms by food category">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={report.categoryBreakdown} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
-                <CartesianGrid stroke="#e3e8e5" horizontal={false} />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#66736d", fontSize: 11 }} />
-                <YAxis dataKey="label" type="category" width={76} axisLine={false} tickLine={false} tick={{ fill: "#66736d", fontSize: 11 }} />
-                <Tooltip cursor={{ fill: "#f1f4ef" }} contentStyle={{ border: "1px solid #111814", borderRadius: 2, fontSize: 12, boxShadow: "4px 4px 0 rgba(17,24,20,.12)" }} />
-                <Bar dataKey="kilograms" name="Kilograms" radius={[0, 2, 2, 0]} isAnimationActive={false}>
-                  {report.categoryBreakdown.map((entry) => <Cell key={entry.label} fill={entry.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      </div>
-
-      <section className="cn-panel mt-5" aria-labelledby="recipients-title">
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] bg-[var(--ink)] p-5 text-white">
-          <div>
-            <h2 id="recipients-title" className="text-sm font-bold">Recipient organisations supported</h2>
-            <p className="mt-1 text-xs text-white/45">Unique recipients linked to completed collections</p>
-          </div>
-          <Building2 aria-hidden="true" className="shrink-0 text-[var(--acid)]" size={19} />
-        </div>
-        <div className="divide-y divide-[var(--line)]">
-          {report.supportedRecipients.map((recipient) => (
-            <div key={recipient.id} className="cn-row-action grid gap-2 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_140px_100px] sm:items-center sm:gap-5">
-              <div className="min-w-0">
-                <p className="text-sm font-bold">{recipient.name}</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">{recipient.type}, {recipient.city}</p>
-              </div>
-              <p className="text-xs"><strong>{recipient.collections}</strong> {recipient.collections === 1 ? "collection" : "collections"}</p>
-              <p className="text-sm font-bold text-[var(--green)] sm:text-right">{formatNumber(recipient.kilograms)} kg</p>
-            </div>
-          ))}
+      <section className="cn-panel mt-5 p-4 sm:p-5" aria-labelledby="impact-filters-title">
+        <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter size={16} className="text-[var(--blue)]" /><h2 id="impact-filters-title" className="text-sm font-bold">Reporting filters</h2></div><button type="button" className="text-xs font-bold text-[var(--blue)]" onClick={() => setFilters({})}>Clear filters</button></div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <label><span className="mb-1.5 block text-[10px] font-bold uppercase text-[var(--muted)]">From date</span><input aria-label="Filter from date" className={fieldClass} type="date" value={filters.from ?? ""} onChange={(event) => updateFilter("from", event.target.value)} /></label>
+          <label><span className="mb-1.5 block text-[10px] font-bold uppercase text-[var(--muted)]">To date</span><input aria-label="Filter to date" className={fieldClass} type="date" value={filters.to ?? ""} onChange={(event) => updateFilter("to", event.target.value)} /></label>
+          <label><span className="mb-1.5 block text-[10px] font-bold uppercase text-[var(--muted)]">City</span><select aria-label="Filter by city" className={fieldClass} value={filters.city ?? ""} onChange={(event) => updateFilter("city", event.target.value)}><option value="">All cities</option>{cities.map((city) => <option key={city}>{city}</option>)}</select></label>
+          <label><span className="mb-1.5 block text-[10px] font-bold uppercase text-[var(--muted)]">Organisation type</span><select aria-label="Filter by organisation type" className={fieldClass} value={filters.organisationType ?? ""} onChange={(event) => updateFilter("organisationType", event.target.value)}><option value="">All types</option>{organisationTypes.map((type) => <option key={type}>{type}</option>)}</select></label>
+          <label><span className="mb-1.5 block text-[10px] font-bold uppercase text-[var(--muted)]">Food category</span><select aria-label="Filter by food category" className={fieldClass} value={filters.category ?? ""} onChange={(event) => updateFilter("category", event.target.value as FoodCategory | "")}><option value="">All categories</option>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
         </div>
       </section>
 
-      <section className="cn-panel mt-5 overflow-hidden" aria-labelledby="collections-title">
-        <div className="border-b border-[var(--line)] p-5">
-          <h2 id="collections-title" className="text-sm font-bold">Completed collection log</h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">Traceable source records for the direct impact totals</p>
+      <section aria-label="Impact summary" className="cn-panel mt-5 grid gap-px overflow-hidden bg-[var(--line)] sm:grid-cols-2 xl:grid-cols-4">
+        <Metric label="Food redistributed" value={`${formatNumber(metrics.redistributedKg)} kg`} detail={`Sum of ${metrics.collectionsCompleted} confirmed deliveries`} icon={Scale} />
+        <Metric label="Estimated meals" value={formatNumber(metrics.estimatedMeals)} detail={`${metrics.redistributedKg} kg × ${IMPACT_ASSUMPTIONS.mealsPerKilogram.value}`} estimate icon={Utensils} tone="blue" />
+        <Metric label="Estimated financial value" value={currencyFormatter.format(metrics.financialValueEur)} detail="Illustrative blended food value" estimate icon={Euro} tone="amber" />
+        <Metric label="Estimated CO2e avoided" value={`${formatNumber(metrics.estimatedCo2eAvoidedKg)} kg`} detail="Illustrative avoided-emissions factor" estimate icon={Leaf} />
+        <Metric label="Landfill diversion" value={`${formatNumber(metrics.landfillDiversionKg)} kg`} detail="Delivered quantity adjusted for handling loss" estimate icon={Recycle} tone="red" />
+        <Metric label="Collections completed" value={formatNumber(metrics.collectionsCompleted)} detail="Events with delivery confirmation" icon={CheckCircle2} tone="blue" />
+        <Metric label="Recipient organisations supported" value={formatNumber(metrics.recipientOrganisationsSupported)} detail="Unique recipients linked to delivered events" icon={Users} />
+        <Metric label="Collection success rate" value={`${formatNumber(metrics.collectionSuccessRate)}%`} detail="Delivered events ÷ terminal attempts" icon={TrendingUp} tone="blue" />
+      </section>
+
+      {report.deliveredEvents.length === 0 ? (
+        <section className="cn-panel mt-5 p-10 text-center"><Recycle className="mx-auto text-[var(--muted)]" size={28} /><h2 className="mt-3 text-sm font-bold">No delivered events match these filters</h2><p className="mt-1 text-xs text-[var(--muted)]">Clear or broaden the reporting filters to restore the demonstration results.</p></section>
+      ) : (
+        <div className="mt-5 grid gap-5 xl:grid-cols-2">
+          <section className="cn-panel p-4 sm:p-5" aria-labelledby="pipeline-title"><h2 id="pipeline-title" className="text-sm font-bold">Resource workflow by status</h2><p className="mt-1 text-xs text-[var(--muted)]">Kilograms across the shared data spine</p><div className="mt-5 h-[270px] min-w-0" role="img" aria-label="Bar chart of resource event kilograms by status"><ResponsiveContainer width="100%" height="100%"><BarChart data={report.statusBreakdown} margin={{ top: 8, right: 8, left: -15, bottom: 0 }}><CartesianGrid stroke="#e3e8e5" vertical={false} /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#647069", fontSize: 10 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#647069", fontSize: 10 }} /><Tooltip cursor={{ fill: "#f1f4ef" }} contentStyle={{ border: "1px solid #111814", borderRadius: 2, fontSize: 12 }} /><Bar dataKey="kilograms" name="Kilograms" isAnimationActive={false}>{report.statusBreakdown.map((entry) => <Cell key={entry.label} fill={entry.color} />)}</Bar></BarChart></ResponsiveContainer></div></section>
+          <section className="cn-panel p-4 sm:p-5" aria-labelledby="category-title"><h2 id="category-title" className="text-sm font-bold">Delivered food by category</h2><p className="mt-1 text-xs text-[var(--muted)]">Confirmed delivery quantities only</p><div className="mt-5 h-[270px] min-w-0" role="img" aria-label="Bar chart of delivered kilograms by category"><ResponsiveContainer width="100%" height="100%"><BarChart data={report.categoryBreakdown} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 0 }}><CartesianGrid stroke="#e3e8e5" horizontal={false} /><XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#647069", fontSize: 10 }} /><YAxis dataKey="label" type="category" width={86} axisLine={false} tickLine={false} tick={{ fill: "#647069", fontSize: 10 }} /><Tooltip cursor={{ fill: "#f1f4ef" }} contentStyle={{ border: "1px solid #111814", borderRadius: 2, fontSize: 12 }} /><Bar dataKey="kilograms" name="Kilograms" isAnimationActive={false}>{report.categoryBreakdown.map((entry) => <Cell key={entry.label} fill={entry.color} />)}</Bar></BarChart></ResponsiveContainer></div></section>
         </div>
-        <div className="divide-y divide-[var(--line)] md:hidden">
-          {report.completedCollections.map((collection) => (
-            <article key={collection.id} className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-bold">{collection.title}</h3>
-                  <p className="mt-1 text-xs text-[var(--muted)]">{collection.category}, {collection.city}</p>
-                </div>
-                <strong className="shrink-0 text-sm text-[var(--green)]">{formatNumber(collection.kilograms)} kg</strong>
-              </div>
-              <p className="mt-3 text-xs"><span className="text-[var(--muted)]">Recipient:</span> {collection.recipientName}</p>
-              <p className="mt-1 text-xs"><span className="text-[var(--muted)]">Collected:</span> {formatDateTime(collection.collectedAt)}</p>
-            </article>
-          ))}
-        </div>
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead className="bg-[var(--ink)] font-mono text-[9px] text-white/55">
-              <tr>
-                <th className="px-5 py-3 font-bold">Listing</th>
-                <th className="px-5 py-3 font-bold">Recipient</th>
-                <th className="px-5 py-3 font-bold">Collected</th>
-                <th className="px-5 py-3 text-right font-bold">Quantity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--line)]">
-              {report.completedCollections.map((collection) => (
-                <tr key={collection.id} className="transition-colors hover:bg-[var(--surface-raised)]">
-                  <td className="px-5 py-4"><strong className="block text-[var(--ink)]">{collection.title}</strong><span className="mt-1 block text-[var(--muted)]">{collection.category}, {collection.city}</span></td>
-                  <td className="px-5 py-4 font-semibold">{collection.recipientName}</td>
-                  <td className="px-5 py-4 text-[var(--muted)]">{formatDateTime(collection.collectedAt)}</td>
-                  <td className="px-5 py-4 text-right text-sm font-bold text-[var(--green)]">{formatNumber(collection.kilograms)} kg</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      )}
+
+      <section className="mt-5 border border-[var(--ink)] bg-white" aria-labelledby="methodology-title">
+        <div className="flex items-start gap-3 bg-[var(--ink)] p-5 text-white"><Settings2 className="mt-0.5 shrink-0 text-[var(--acid)]" size={19} /><div><div className="flex flex-wrap items-center gap-2"><h2 id="methodology-title" className="text-sm font-bold">Demonstration methodology</h2><Badge tone="blue">{report.assumptionsVersion}</Badge></div><p className="mt-2 text-xs leading-5 text-white/55">Editable conversion factors live in <code className="font-bold text-[var(--acid)]">src/config/impact-assumptions.ts</code>. Figures are estimates and are not audited.</p></div></div>
+        <div className="divide-y divide-[var(--line)]">{assumptionRows.map(([name, value, description]) => <div key={name} className="grid gap-2 px-5 py-4 md:grid-cols-[minmax(0,1fr)_220px_minmax(0,1.5fr)] md:items-center md:gap-5"><p className="text-xs font-bold">{name}</p><p className="text-sm font-bold text-[var(--blue)]">{value}</p><p className="text-xs leading-5 text-[var(--muted)]">{description}</p></div>)}</div>
+      </section>
+
+      <section className="cn-panel mt-5 overflow-hidden" aria-labelledby="deliveries-title">
+        <div className="flex items-center justify-between gap-4 border-b border-[var(--line)] p-5"><div><h2 id="deliveries-title" className="text-sm font-bold">Delivered resource-event log</h2><p className="mt-1 text-xs text-[var(--muted)]">Traceable source records behind the direct totals</p></div><Building2 size={18} className="text-[var(--green)]" /></div>
+        <div className="divide-y divide-[var(--line)]">{report.deliveredEvents.map((event) => <Link href={`/listings/${event.sourceId}`} key={event.id} className="cn-row-action grid gap-2 p-5 sm:grid-cols-[minmax(0,1fr)_180px_120px] sm:items-center"><div><p className="text-sm font-bold">{event.title}</p><p className="mt-1 text-xs text-[var(--muted)]">{event.category} · {event.city} · {event.recipientName}</p></div><p className="text-xs text-[var(--muted)]">{formatDateTime(event.deliveredAt)}</p><p className="text-sm font-bold text-[var(--green)] sm:text-right">{formatNumber(event.kilograms)} kg</p></Link>)}</div>
       </section>
     </>
   );

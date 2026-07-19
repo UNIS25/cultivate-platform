@@ -12,4 +12,5 @@ export {
   getInitiative,
   getListingMatchGroups,
   getMatchRecommendations,
+  getResourceEvent,
 } from "@/data/selectors";

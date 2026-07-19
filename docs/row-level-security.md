@@ -1,6 +1,6 @@
 # Row-level security
 
-All application tables have PostgreSQL row-level security enabled in `supabase/migrations/202607180002_row_level_security.sql`. Policies use Supabase Auth's `auth.uid()` and the application profile in `public.users`.
+All application tables have PostgreSQL row-level security enabled. The original policies live in `supabase/migrations/202607180002_row_level_security.sql`; the resource-event, delivery, audit, and aggregate-transparency policies are added by `supabase/migrations/202607190002_resource_event_rls.sql`. Policies use Supabase Auth's `auth.uid()` and the application profile in `public.users`.
 
 The browser uses only a publishable key. Never expose the `service_role` key to Next.js Client Components or any `NEXT_PUBLIC_*` variable; `service_role` bypasses RLS and is reserved for trusted maintenance, user assignment, and controlled impact-record creation.
 
@@ -29,6 +29,8 @@ Security-definer helpers read the current profile without triggering recursive R
 - `listing_donor_organisation(uuid)`
 - `location_belongs_to_organisation(uuid, uuid)`
 - `can_access_collection(uuid)`
+- `can_access_resource_event(uuid)`
+- `can_manage_resource_event(uuid)`
 
 Execution is granted only where a policy requires it. These functions do not accept a user ID, so callers cannot impersonate another profile.
 
@@ -71,6 +73,12 @@ Execution is granted only where a policy requires it. These functions do not acc
 | `impact_records` | `impact_records_public_read` | `SELECT` | Records explicitly marked public are readable by anyone. |
 | `impact_records` | `impact_records_participant_read` | `SELECT` | Collection participants can read the associated non-public impact record. |
 | `impact_records` | `impact_records_platform_insert` | `INSERT` | Only a platform admin can create an impact record through the authenticated API. Trusted backend jobs may use `service_role`. |
+| `resource_events` | `resource_events_participant_read` | `SELECT` | Only donor members, the matched destination organisation, or a platform admin can read the operational spine. |
+| `resource_events` | `resource_events_donor_insert` | `INSERT` | A donor coordinator/admin can create an event for its own organisation. |
+| `resource_events` | `resource_events_participant_update` | `UPDATE` | Participant coordinators/admins can use guarded workflow transitions; identity and status rules still apply. |
+| `delivery_confirmations` | `delivery_confirmations_participant_read` | `SELECT` | Only event participants or a platform admin can read delivery evidence. |
+| `delivery_confirmations` | `delivery_confirmations_participant_insert` | `INSERT` | Participant coordinators/admins can confirm delivery for an event they manage. |
+| `audit_events` | `audit_events_participant_read` | `SELECT` | Event participants or a platform admin can read custody evidence. Client roles have no update or delete grant. |
 | `governance_resources` | `governance_resources_public_read` | `SELECT` | Published resources are public once `published_at` has passed. |
 | `governance_resources` | `governance_resources_platform_manage` | `ALL` | Platform admins manage draft, published, and archived governance resources. |
 | `engagement_resources` | `engagement_resources_public_read` | `SELECT` | Published resources are public once `published_at` has passed. |
@@ -85,7 +93,36 @@ RLS controls which rows a caller may address. Triggers and constraints protect i
 - `validate_collection_parties()` verifies the listing, donor, location, quantity, and optional match before a collection is written.
 - `protect_collection_identity()` prevents participant substitution, invalid status transitions, and any mutation after completion.
 - `sync_completed_collection()` marks the listing collected and records the recipient and completion time.
+- Resource-event sync triggers connect legacy listing, match, collection, delivery, and impact writes through stable IDs.
+- `validate_resource_event_transition()` enforces the permitted state graph and protects event identity.
+- `transition_resource_event()` applies authorised state changes through a security-definer RPC while preserving RLS membership checks.
+- `protect_audit_event_append_only()` rejects updates and deletions independently of client grants.
+- Delivery confirmation is required before an event can become `delivered`; only delivered events can receive impact records.
 - Impact records are append-only for application roles and retain an immutable assumptions snapshot.
+
+## Public transparency boundary
+
+Anonymous callers have no direct table grant for `resource_events`, `delivery_confirmations`, or `audit_events`. The public transparency page calls `get_transparency_statistics(date)`, a security-definer aggregate RPC with a fixed `search_path`.
+
+The RPC returns only:
+
+- same-day aggregate kilograms, meals, pickups, organisation count, and estimated CO2e;
+- activity grouped by generalised city and country;
+- recent delivery category, quantity, generalised area, and generated donor/recipient aliases.
+
+It does not return organisation IDs, user IDs, contacts, precise addresses, postal codes, or exact private coordinates. Existing public organisation and listing discovery remains constrained to active public profiles and public/generalised locations. Researcher-facing exports are built from the same anonymised aggregate boundary.
+
+## Resource-event status permissions
+
+The allowed progression is:
+
+```text
+draft → available → matched → accepted → collected → delivered
+```
+
+`draft`, `available`, `matched`, and `accepted` may also transition to `cancelled`; `available`, `matched`, and `accepted` may transition to `expired`. Terminal states cannot be reopened through the client RPC. Collection and delivery transitions additionally require their corresponding evidence rows.
+
+The demonstration role switcher is UI state only. It neither changes the authenticated profile nor alters these policies.
 
 ## Administrative assignment
 
@@ -112,3 +149,5 @@ order by tablename, policyname;
 ```
 
 Run `npm run db:lint` against the local Supabase stack, and test policies with separate anonymous, viewer, coordinator, organisation-admin, and platform-admin sessions before production deployment.
+
+For a remote deployment, back up the project, apply both resource-event migrations in timestamp order, review the migration diff, and repeat the RLS checks above. Do not seed a production project with `supabase/seed.sql`.
